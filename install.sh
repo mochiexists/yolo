@@ -36,8 +36,11 @@ install_to_rc() {
 }
 
 echo ""
-echo "  Installing claude-yolo..."
+echo "  /\\_/\\  "
+echo " ( o.o ) claude --yolo"
+echo "  > ^ <  installer"
 echo ""
+echo "==> Sniffing shell config..."
 
 installed=0
 
@@ -56,13 +59,22 @@ if [ -f "$HOME/.bashrc" ] || [ "$(basename "$SHELL")" = "bash" ]; then
 fi
 
 if [ "$installed" -eq 0 ]; then
-    echo "  Could not detect shell config. Manually add this to your shell rc file:"
+    echo ""
+    echo "  /\\_/\\  "
+    echo " ( x.x ) Meow! Could not detect shell config."
+    echo "  > ^ <  "
+    echo ""
+    echo "  Manually add this to your shell rc file:"
     echo "$FUNCTION_BLOCK"
     exit 1
 fi
 
 echo ""
-echo "  Done! Open a new terminal, then run:"
+echo "  /\\_/\\  "
+echo " ( ^.^ ) Installed! *knocks things off desk*"
+echo "  > ^ <  meow~"
+echo ""
+echo "  Open a new terminal, then run:"
 echo ""
 echo "    claude --yolo"
 echo ""
