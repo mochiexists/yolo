@@ -1,20 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#0a0a0f"/>
+  <rect width="64" height="64" rx="14" fill="#131318"/>
   <!-- Ears -->
-  <path d="M14 28 L22 8 L30 24" fill="none" stroke="#a99bc8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M34 24 L42 8 L50 28" fill="none" stroke="#a99bc8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Face circle -->
-  <ellipse cx="32" cy="36" rx="18" ry="14" fill="none" stroke="#a99bc8" stroke-width="2" opacity="0.3"/>
+  <path d="M16 30 L23 10 L30 26" fill="none" stroke="#a99bc8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34 26 L41 10 L48 30" fill="none" stroke="#a99bc8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
   <!-- Eyes -->
-  <circle id="eye-l" cx="24" cy="34" r="2.5" fill="#a99bc8"/>
-  <circle id="eye-r" cx="40" cy="34" r="2.5" fill="#a99bc8"/>
+  <circle cx="24" cy="34" r="3" fill="#a99bc8"/>
+  <circle cx="40" cy="34" r="3" fill="#a99bc8"/>
   <!-- Nose -->
-  <polygon points="32,40 30,43 34,43" fill="#a99bc8" opacity="0.6"/>
+  <circle cx="32" cy="41" r="1.8" fill="#a99bc8" opacity="0.7"/>
   <!-- Mouth -->
-  <path d="M28 45 Q32 49 36 45" fill="none" stroke="#a99bc8" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-  <!-- Whiskers -->
-  <line x1="8" y1="38" x2="20" y2="40" stroke="#a99bc8" stroke-width="1" opacity="0.3"/>
-  <line x1="8" y1="42" x2="20" y2="42" stroke="#a99bc8" stroke-width="1" opacity="0.3"/>
-  <line x1="44" y1="40" x2="56" y2="38" stroke="#a99bc8" stroke-width="1" opacity="0.3"/>
-  <line x1="44" y1="42" x2="56" y2="42" stroke="#a99bc8" stroke-width="1" opacity="0.3"/>
+  <path d="M27 46 Q32 51 37 46" fill="none" stroke="#a99bc8" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
 </svg>
