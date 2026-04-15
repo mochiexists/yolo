@@ -52,6 +52,27 @@
             transition: opacity 0.3s;
         }
 
+        /* ── Home link (mochi cat) ── */
+        .home-link {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 10;
+            opacity: 0.35;
+            transition: opacity 0.4s, transform 0.4s;
+        }
+
+        .home-link:hover {
+            opacity: 0.85;
+            transform: scale(1.08);
+        }
+
+        .home-link img {
+            width: 48px;
+            height: auto;
+            filter: drop-shadow(0 0 12px rgba(124, 111, 156, 0.3));
+        }
+
         /* Floating particles */
         .particle {
             position: fixed;
@@ -355,6 +376,10 @@
     </style>
 </head>
 <body>
+    <a href="https://mochiexists.com" class="home-link" title="mochiexists">
+        <img src="https://mochiexists.com/assets/mochi.png" alt="mochi">
+    </a>
+
     <div class="cursor-glow" id="glow"></div>
 
     <div class="container">
