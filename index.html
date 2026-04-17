@@ -819,20 +819,9 @@
             }
 
             function deleteText(callback) {
-                var text = termText.textContent;
-                var i = text.length;
-                // Delete at half typing speed, feels natural
-                var speed = Math.max(15, typistData[currentTypist].msPerChar / 2);
-                function step() {
-                    if (i >= 0) {
-                        termText.textContent = text.slice(0, i);
-                        i--;
-                        setTimeout(step, speed);
-                    } else {
-                        callback();
-                    }
-                }
-                step();
+                // cmd+backspace — clear the whole line instantly
+                termText.textContent = '';
+                setTimeout(callback, 120);
             }
 
             function showReaction(text) {
