@@ -11,8 +11,8 @@ Also installs shortcuts:
 
 | Shortcut | Expands to |
 |----------|------------|
-| `cly` | `claude --yolo` |
-| `coy` | `codex --yolo` |
+| `cc` / `ccy` | `claude --yolo` |
+| `cx` / `cxy` | `codex --yolo` |
 
 ## Install
 

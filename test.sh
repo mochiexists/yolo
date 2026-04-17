@@ -119,12 +119,14 @@ assert_contains "block has __claude_yolo function" "__claude_yolo()" "$ACTUAL_BL
 assert_contains "block has precmd hook" "add-zsh-hook precmd" "$ACTUAL_BLOCK"
 assert_contains "block has --dangerously-skip-permissions rewrite" "dangerously-skip-permissions" "$ACTUAL_BLOCK"
 assert_contains "block has __claude_yolo_inner fallback" "__claude_yolo_inner" "$ACTUAL_BLOCK"
-assert_contains "block has cly alias" "alias cly=" "$ACTUAL_BLOCK"
-assert_contains "block has coy alias" "alias coy=" "$ACTUAL_BLOCK"
+assert_contains "block has cc alias" "alias cc=" "$ACTUAL_BLOCK"
+assert_contains "block has cx alias" "alias cx=" "$ACTUAL_BLOCK"
+assert_contains "block has ccy alias" "alias ccy=" "$ACTUAL_BLOCK"
+assert_contains "block has cxy alias" "alias cxy=" "$ACTUAL_BLOCK"
 
 # Verify line count is reasonable
 block_lines=$(echo "$ACTUAL_BLOCK" | wc -l | tr -d ' ')
-assert_eq "block has 30 lines" "30" "$block_lines"
+assert_eq "block has 32 lines" "32" "$block_lines"
 echo ""
 
 # ─────────────────────────────────────────────
@@ -153,10 +155,14 @@ mixed=$(zsh -c "export PATH='$FAKE_HOME/bin:\$PATH'; source '$FAKE_HOME/.zshrc';
 assert_eq "mixed args rewritten correctly" "--model opus --dangerously-skip-permissions --verbose" "$mixed"
 
 # Shortcut aliases
-cly_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias cly" 2>&1)
-coy_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias coy" 2>&1)
-assert_contains "cly alias defined" "claude --yolo" "$cly_def"
-assert_contains "coy alias defined" "codex --yolo" "$coy_def"
+cc_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias cc" 2>&1)
+cx_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias cx" 2>&1)
+ccy_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias ccy" 2>&1)
+cxy_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias cxy" 2>&1)
+assert_contains "cc alias defined" "claude --yolo" "$cc_def"
+assert_contains "cx alias defined" "codex --yolo" "$cx_def"
+assert_contains "ccy alias defined" "claude --yolo" "$ccy_def"
+assert_contains "cxy alias defined" "codex --yolo" "$cxy_def"
 
 # Idempotent reinstall
 reinstall_output=$(sh "$SCRIPT_DIR/install.sh" 2>&1)
@@ -309,8 +315,10 @@ assert_eq "bashrc has claude-yolo marker" "1" "$(count_matches '>>> claude-yolo 
 BASH_BLOCK=$(sed -n '/>>> claude-yolo >>>/,/<<< claude-yolo <<</p' "$FAKE_BASH_HOME/.bashrc")
 assert_contains "bash block has PROMPT_COMMAND hook" "PROMPT_COMMAND=" "$BASH_BLOCK"
 assert_contains "bash block has __claude_yolo hook" "__claude_yolo_hook()" "$BASH_BLOCK"
-assert_contains "bash block has cly alias" "alias cly=" "$BASH_BLOCK"
-assert_contains "bash block has coy alias" "alias coy=" "$BASH_BLOCK"
+assert_contains "bash block has cc alias" "alias cc=" "$BASH_BLOCK"
+assert_contains "bash block has cx alias" "alias cx=" "$BASH_BLOCK"
+assert_contains "bash block has ccy alias" "alias ccy=" "$BASH_BLOCK"
+assert_contains "bash block has cxy alias" "alias cxy=" "$BASH_BLOCK"
 
 mkdir -p "$FAKE_BASH_HOME/bin"
 cat > "$FAKE_BASH_HOME/bin/claude" << 'FAKEBASHBIN'
