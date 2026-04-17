@@ -767,8 +767,6 @@
             var terminal = document.getElementById('terminal');
             var metaKeys = document.getElementById('metaKeys');
             var metaTime = document.getElementById('metaTime');
-            var typeSpeed = 45;
-            var deleteSpeed = 25;
             var pauseAfterType = 1200;
             var pauseAfterDelete = 400;
             var pauseBetweenLoops = 2500;
@@ -814,7 +812,7 @@
                         termText.textContent = text.slice(0, i);
                         if (i > 0) { keystrokeCount++; updateMeta(); }
                         i++;
-                        setTimeout(step, typeSpeed);
+                        setTimeout(step, typistData[currentTypist].msPerChar);
                     } else { callback(); }
                 }
                 step();
@@ -823,11 +821,13 @@
             function deleteText(callback) {
                 var text = termText.textContent;
                 var i = text.length;
+                // Delete at half typing speed, feels natural
+                var speed = Math.max(15, typistData[currentTypist].msPerChar / 2);
                 function step() {
                     if (i >= 0) {
                         termText.textContent = text.slice(0, i);
                         i--;
-                        setTimeout(step, deleteSpeed);
+                        setTimeout(step, speed);
                     } else {
                         callback();
                     }
