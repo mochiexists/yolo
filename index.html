@@ -965,15 +965,64 @@
         .fade-up:nth-child(8) { animation-delay: 0.72s; }
 
         /* ── Responsive ── */
-        @media (max-width: 500px) {
+        @media (max-width: 640px) {
+            body { padding: 2rem 1.1rem; }
             h1 { font-size: 2rem; }
             h1 .flag { font-size: 1.6rem; }
+            .tagline { font-size: 1rem; }
             .cat { font-size: 0.95rem; }
-            .terminal { font-size: 0.82rem; padding: 1.1rem 1.2rem; }
-            .install-box, .install-box code { font-size: 0.78rem; }
+            .terminal { font-size: 0.82rem; padding: 1.1rem 1.2rem; min-height: 3rem; }
+            .terminal-meta { font-size: 0.65rem; gap: 0.7rem; }
+            .install-box, .install-box code { font-size: 0.72rem; padding-right: 2.5rem; }
+            .install-box { padding: 0.85rem 2.5rem 0.85rem 0.95rem; }
+            .install-note { font-size: 0.85rem; }
             .shortcut-key { font-size: 1.1rem; }
-            .stat-number { font-size: 1.4rem; }
-            .stats { gap: 0.5rem; }
+            .shortcut-val { font-size: 0.88rem; }
+            .shortcuts-tagline { font-size: 1rem; }
+            .aside { font-size: 0.92rem; }
+
+            /* Stats */
+            .stats { gap: 0.6rem; }
+            .stat-number { font-size: 1.45rem; }
+            .stat-label { font-size: 0.82rem; }
+            .stat-fine-print { font-size: 0.78rem; }
+
+            /* Stats toggle — drop the wpm suffix, let buttons breathe */
+            .stats-toggle { width: 100%; justify-content: center; }
+            .stats-toggle button { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+            .stats-toggle .wpm-suffix { display: none; }
+
+            /* Typing test */
+            .typing-test { padding: 1rem 0.9rem; }
+            .typing-target { font-size: 0.88rem; padding: 0.7rem 0.8rem; }
+            .typing-input { font-size: 0.85rem; padding: 0.6rem 0.75rem; }
+            .typing-controls { font-size: 0.72rem; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+            .typing-live { text-align: center; }
+            .typing-prompt-label { font-size: 0.82rem; }
+            .typing-result-wpm { font-size: 1.7rem; }
+            .typing-result-label { font-size: 0.9rem; }
+            .typing-result-breakdown { font-size: 0.68rem; }
+
+            /* Submit form: stack vertically for thumb reach */
+            .submit-form { flex-direction: column; gap: 0.6rem; }
+            .submit-form input { width: 100%; }
+            .submit-form button { width: 100%; padding: 0.7rem 1.1rem; }
+            .submit-status { font-size: 0.92rem; }
+            .submit-status.success .rank-big { font-size: 1.4rem; }
+
+            /* Install toggle */
+            .install-toggle button { font-size: 0.72rem; padding: 0.3rem 0.7rem; }
+
+            /* Leaderboard: tighter, drop saved/yr column */
+            .leaderboard-title { font-size: 1.3rem; }
+            .leaderboard-subtitle { font-size: 0.88rem; }
+            .leaderboard { font-size: 0.8rem; }
+            .leaderboard-row { grid-template-columns: 32px 1fr auto; gap: 0.5rem; padding: 0.6rem 0.85rem; }
+            .leaderboard-row.header { font-size: 0.62rem; }
+            .lb-saved { display: none; }
+
+            /* Share buttons */
+            .share-buttons button { font-size: 0.72rem; padding: 0.4rem 0.75rem; }
         }
     </style>
 </head>
@@ -1008,9 +1057,9 @@
 
         <div class="stats-section fade-up">
             <div class="stats-toggle">
-                <button class="active" id="statsHuman" onclick="switchTypist('human')">human (80 wpm)</button>
-                <button id="statsVim" onclick="switchTypist('vim')">vim user (250 wpm)</button>
-                <button id="statsYou" onclick="switchTypist('you')">you (<span id="youWpm">??</span> wpm)</button>
+                <button class="active" id="statsHuman" onclick="switchTypist('human')">human<span class="wpm-suffix"> (80 wpm)</span></button>
+                <button id="statsVim" onclick="switchTypist('vim')">vim user<span class="wpm-suffix"> (250 wpm)</span></button>
+                <button id="statsYou" onclick="switchTypist('you')">you<span class="wpm-suffix"> (<span id="youWpm">??</span> wpm)</span></button>
             </div>
             <div class="stats">
                 <div class="stat">
