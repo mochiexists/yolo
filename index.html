@@ -1329,6 +1329,16 @@
 
         document.getElementById('typingInput').addEventListener('input', onTypingInput);
 
+        // Ctrl+C (or Cmd+C) to restart the typing test — terminal-style SIGINT
+        document.addEventListener('keydown', function(e) {
+            var test = document.getElementById('typingTest');
+            if (test.style.display === 'none') return;
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                e.preventDefault();
+                resetTypingTest();
+            }
+        });
+
         /* ── Install/Uninstall toggle ── */
         function switchInstall(mode) {
             var code = document.getElementById('installCode');
