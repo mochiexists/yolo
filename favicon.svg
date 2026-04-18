@@ -1,13 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#131318"/>
-  <!-- Ears -->
-  <path d="M16 30 L23 10 L30 26" fill="none" stroke="#a99bc8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M34 26 L41 10 L48 30" fill="none" stroke="#a99bc8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Eyes -->
-  <circle cx="24" cy="34" r="3" fill="#a99bc8"/>
-  <circle cx="40" cy="34" r="3" fill="#a99bc8"/>
+  <!-- Ears (triangular, filled) -->
+  <path d="M14 28 L20 10 L28 24 Z" fill="#a99bc8"/>
+  <path d="M36 24 L44 10 L50 28 Z" fill="#a99bc8"/>
+  <!-- Inner ears -->
+  <path d="M18 24 L21 15 L25 22 Z" fill="#c48b9f" opacity="0.6"/>
+  <path d="M39 22 L43 15 L46 24 Z" fill="#c48b9f" opacity="0.6"/>
+  <!-- Head -->
+  <ellipse cx="32" cy="36" rx="18" ry="16" fill="#a99bc8"/>
+  <!-- Cheeks (blush) -->
+  <ellipse cx="19" cy="42" rx="4" ry="2.5" fill="#c48b9f" opacity="0.75"/>
+  <ellipse cx="45" cy="42" rx="4" ry="2.5" fill="#c48b9f" opacity="0.75"/>
+  <!-- Eyes (big round, open) -->
+  <circle cx="25" cy="35" r="3.5" fill="#131318"/>
+  <circle cx="39" cy="35" r="3.5" fill="#131318"/>
+  <!-- Eye highlights -->
+  <circle cx="26" cy="34" r="1" fill="#ffffff"/>
+  <circle cx="40" cy="34" r="1" fill="#ffffff"/>
   <!-- Nose -->
-  <circle cx="32" cy="41" r="1.8" fill="#a99bc8" opacity="0.7"/>
+  <path d="M30 42 L34 42 L32 44 Z" fill="#131318"/>
   <!-- Mouth -->
-  <path d="M27 46 Q32 51 37 46" fill="none" stroke="#a99bc8" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <path d="M32 44 Q30 47 28 46" fill="none" stroke="#131318" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M32 44 Q34 47 36 46" fill="none" stroke="#131318" stroke-width="1.2" stroke-linecap="round"/>
 </svg>
