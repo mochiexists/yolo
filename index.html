@@ -634,36 +634,98 @@
             color: var(--accent-bright);
         }
 
-        /* ── Leaderboard ── */
-        .leaderboard-section {
+        /* ── Unified benchmark card (leaderboard + typing test) ── */
+        .benchmark-card {
             margin-bottom: 3rem;
+            padding: 1.3rem 1.2rem 1.1rem;
+            background: rgba(124, 111, 156, 0.04);
+            border: 1px solid rgba(124, 111, 156, 0.13);
+            border-radius: 14px;
+            text-align: left;
         }
 
-        .leaderboard-title {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.6rem;
-            font-weight: 300;
-            color: var(--text);
-            margin-bottom: 0.3rem;
-            letter-spacing: -0.01em;
+        .benchmark-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 0.9rem;
+            padding: 0 0.2rem;
         }
 
-        .leaderboard-subtitle {
+        .benchmark-eyebrow {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--accent-bright);
+            opacity: 0.8;
+        }
+
+        .benchmark-tagline {
             font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             font-style: italic;
             color: var(--text-dim);
             opacity: 0.55;
-            margin-bottom: 1.3rem;
+            text-align: right;
+        }
+
+        .benchmark-footer {
+            margin-top: 0.85rem;
+        }
+
+        .benchmark-cta {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: rgba(184, 168, 216, 0.08);
+            border: 1px dashed rgba(184, 168, 216, 0.3);
+            border-radius: 10px;
+            color: var(--accent-bright);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .benchmark-cta:hover {
+            background: rgba(184, 168, 216, 0.18);
+            border-style: solid;
+            border-color: var(--accent-bright);
+            box-shadow: 0 0 25px rgba(184, 168, 216, 0.15);
+        }
+
+        .benchmark-cta .cta-main {
+            font-family: var(--mono);
+            font-size: 0.95rem;
+            letter-spacing: 0.02em;
+        }
+
+        .benchmark-cta .cta-sub {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 0.8rem;
+            font-style: italic;
+            opacity: 0.75;
+        }
+
+        .benchmark-card .typing-test {
+            background: transparent;
+            border: none;
+            padding: 0.9rem 0.2rem 0.2rem;
+            margin-top: 0.5rem;
+            border-top: 1px dashed rgba(124, 111, 156, 0.15);
         }
 
         .leaderboard {
             font-family: var(--mono);
             font-size: 0.88rem;
             text-align: left;
-            background: rgba(124, 111, 156, 0.03);
-            border: 1px solid rgba(124, 111, 156, 0.12);
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.18);
+            border: 1px solid rgba(124, 111, 156, 0.1);
+            border-radius: 10px;
             overflow: hidden;
         }
 
@@ -1013,9 +1075,14 @@
             /* Install toggle */
             .install-toggle button { font-size: 0.72rem; padding: 0.3rem 0.7rem; }
 
-            /* Leaderboard: tighter, drop saved/yr column */
-            .leaderboard-title { font-size: 1.3rem; }
-            .leaderboard-subtitle { font-size: 0.88rem; }
+            /* Benchmark card + leaderboard: tighter, drop saved/yr column */
+            .benchmark-card { padding: 1rem 0.8rem 0.9rem; }
+            .benchmark-header { flex-direction: column; align-items: flex-start; gap: 0.1rem; margin-bottom: 0.75rem; }
+            .benchmark-tagline { text-align: left; font-size: 0.78rem; }
+            .benchmark-cta { padding: 0.75rem 0.8rem; }
+            .benchmark-cta .cta-main { font-size: 0.88rem; }
+            .benchmark-cta .cta-sub { font-size: 0.72rem; }
+            .benchmark-card .typing-test { padding: 0.75rem 0 0.2rem; margin-top: 0.4rem; }
             .leaderboard { font-size: 0.8rem; }
             .leaderboard-row { grid-template-columns: 32px 1fr auto; gap: 0.5rem; padding: 0.6rem 0.85rem; }
             .leaderboard-row.header { font-size: 0.62rem; }
@@ -1076,6 +1143,24 @@
                 </div>
             </div>
             <p class="stat-fine-print">* assuming 50 yolo invocations per day, because you're not a coward</p>
+        </div>
+
+        <div class="benchmark-card fade-up">
+            <div class="benchmark-header">
+                <span class="benchmark-eyebrow">leaderboard</span>
+                <span class="benchmark-tagline">fastest yolo typists alive</span>
+            </div>
+
+            <div class="leaderboard" id="leaderboard">
+                <div class="leaderboard-loading">loading...</div>
+            </div>
+
+            <div class="benchmark-footer" id="benchmarkFooter">
+                <button class="benchmark-cta" id="benchmarkCtaBtn" onclick="openTypingTest()">
+                    <span class="cta-main">test your wpm &rarr;</span>
+                    <span class="cta-sub">add yourself to the board</span>
+                </button>
+            </div>
 
             <div class="typing-test" id="typingTest" style="display: none;">
                 <div id="typingActive">
@@ -1142,19 +1227,9 @@
             </p>
         </div>
 
-        <div class="leaderboard-section fade-up">
-            <h2 class="leaderboard-title">leaderboard</h2>
-            <p class="leaderboard-subtitle">the fastest yolo typists on the internet</p>
-            <div class="leaderboard" id="leaderboard">
-                <div class="leaderboard-loading">loading...</div>
-            </div>
-        </div>
-
         <div class="footer fade-up">
             <div class="footer-links">
                 <a href="https://github.com/mochiexists/yolo">github</a>
-                <span class="footer-dot">&bull;</span>
-                <a href="https://pi.dev">pi</a>
                 <span class="footer-dot">&bull;</span>
                 <a href="https://mochiexists.com">mochiexists</a>
             </div>
@@ -1408,9 +1483,14 @@
         if (savedYouWpm > 0) {
             typistData.you.msPerChar = wpmToMsPerChar(savedYouWpm);
             document.getElementById('youWpm').textContent = Math.round(savedYouWpm);
+            var ctaMain = document.querySelector('#benchmarkCtaBtn .cta-main');
+            var ctaSub = document.querySelector('#benchmarkCtaBtn .cta-sub');
+            if (ctaMain) ctaMain.textContent = 'your result: ' + Math.round(savedYouWpm) + ' wpm';
+            if (ctaSub) ctaSub.textContent = 'tap to try again';
         }
 
-        function switchTypist(mode) {
+        function switchTypist(mode, opts) {
+            opts = opts || {};
             var data = typistData[mode];
             var buttons = {
                 human: document.getElementById('statsHuman'),
@@ -1427,16 +1507,27 @@
             document.getElementById('statYear').textContent = data.perYear().toFixed(1) + 'h';
             if (window._setTypist) window._setTypist(mode);
 
+            if (mode === 'you' && !opts.suppressOpen) {
+                openTypingTest({ scroll: true });
+            }
+        }
+
+        function openTypingTest(opts) {
+            opts = opts || {};
             var test = document.getElementById('typingTest');
-            if (mode === 'you') {
-                test.style.display = 'block';
-                if (savedYouWpm === 0) {
-                    resetTypingTest();
-                } else {
-                    showTypingResult(savedYouWpm, null);
-                }
+            var footer = document.getElementById('benchmarkFooter');
+            test.style.display = 'block';
+            if (footer) footer.style.display = 'none';
+            if (savedYouWpm === 0) {
+                resetTypingTest();
+                var input = document.getElementById('typingInput');
+                if (input && !opts.noFocus) setTimeout(function() { input.focus(); }, 250);
             } else {
-                test.style.display = 'none';
+                showTypingResult(savedYouWpm, null);
+            }
+            if (opts.scroll) {
+                var card = document.querySelector('.benchmark-card');
+                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -1586,7 +1677,7 @@
 
             document.getElementById('youWpm').textContent = Math.round(wpm);
             typistData.you.msPerChar = wpmToMsPerChar(wpm);
-            switchTypist('you');
+            switchTypist('you', { suppressOpen: true });
         }
 
         function showTypingResult(wpm, breakdownLines) {
@@ -2081,7 +2172,7 @@
         fetchLeaderboard();
         if (highlightHandle) {
             setTimeout(function() {
-                var section = document.querySelector('.leaderboard-section');
+                var section = document.querySelector('.benchmark-card');
                 if (section) section.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 600);
         }
