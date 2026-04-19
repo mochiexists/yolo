@@ -38,6 +38,7 @@ function doPost(e) {
     const errors = Number(body.errors) || 0;
     const breakdown = body.breakdown || [];
     const recording = body.recording || [];
+    const userToken = (body.userToken || '').toString();
 
     const handle = handleRaw.replace(/[<>\n\r\t]/g, '').slice(0, MAX_HANDLE_LEN);
     if (!handle) return json({ ok: false, error: 'sanitize your handle', code: 'bad_handle' });
@@ -60,6 +61,26 @@ function doPost(e) {
       return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
     }
 
+    const ownerHash = userToken ? sha256Hex(userToken) : '';
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const lastRow = sheet.getLastRow();
+
+    // Soft handle ownership: if anyone has claimed this handle with a
+    // different owner hash, reject. Rows without an owner_hash are legacy /
+    // unclaimed and don't count.
+    if (lastRow > 1) {
+      const handleRange = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+      const ownerRange = sheet.getRange(2, 10, lastRow - 1, 1).getValues();
+      for (let i = 0; i < handleRange.length; i++) {
+        if (String(handleRange[i][0]) !== handle) continue;
+        const existingOwner = String(ownerRange[i][0] || '');
+        if (existingOwner && existingOwner !== ownerHash) {
+          return json({ ok: false, error: 'handle taken, pick another', code: 'handle_taken' });
+        }
+      }
+    }
+
     const msPerChar = 60000 / (wpm * 5);
     const savedS = (35 * msPerChar) / 1000;
     const flag = (wpm > 280 && errors < 1) ? 'review' : '';
@@ -67,7 +88,6 @@ function doPost(e) {
       ? JSON.stringify(summarizeRecording(recording))
       : JSON.stringify(recording).slice(0, 10000);
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     sheet.appendRow([
       new Date(),
       handle,
@@ -77,15 +97,16 @@ function doPost(e) {
       errors,
       JSON.stringify(breakdown),
       recCell,
-      flag
+      flag,
+      ownerHash
     ]);
 
     cache.put(rateKey, '1', RATE_LIMIT_SEC);
     cache.remove(CACHE_KEY);
 
-    const lastRow = sheet.getLastRow();
-    const wpmCol = sheet.getRange(2, 3, lastRow - 1, 1).getValues();
-    const flagCol = sheet.getRange(2, 9, lastRow - 1, 1).getValues();
+    const newLast = sheet.getLastRow();
+    const wpmCol = sheet.getRange(2, 3, newLast - 1, 1).getValues();
+    const flagCol = sheet.getRange(2, 9, newLast - 1, 1).getValues();
     const valid = [];
     for (let i = 0; i < wpmCol.length; i++) {
       const w = wpmCol[i][0];
@@ -98,6 +119,16 @@ function doPost(e) {
   } catch (err) {
     return json({ ok: false, error: 'submission failed: ' + err.message });
   }
+}
+
+function sha256Hex(s) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8);
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) {
+    const b = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
+    out += ('0' + b.toString(16)).slice(-2);
+  }
+  return out;
 }
 
 function readTopEntries(limit) {
