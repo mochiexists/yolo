@@ -394,81 +394,92 @@
         }
 
         .chart-row {
-            margin-bottom: 1.1rem;
+            margin: 0 0 1.8rem;
             text-align: left;
+            padding: 0 0.5rem;
         }
 
         .chart-label {
             font-family: var(--mono);
             font-size: 0.78rem;
             color: var(--text-dim);
-            opacity: 0.55;
-            margin: 0 0 0.4rem 52px;
+            opacity: 0.65;
+            margin-bottom: 1.4rem;
         }
 
-        .chart-bars {
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-        }
-
-        .chart-bar {
-            display: grid;
-            grid-template-columns: 44px 1fr 52px;
-            gap: 0.6rem;
-            align-items: center;
-            font-family: var(--mono);
-            font-size: 0.78rem;
-            padding: 2px 4px;
+        .chart-track {
+            position: relative;
+            height: 10px;
+            background: linear-gradient(90deg,
+                rgba(125, 184, 138, 0.22) 0%,
+                rgba(125, 184, 138, 0.14) 25%,
+                rgba(184, 168, 216, 0.14) 55%,
+                rgba(184, 125, 125, 0.22) 100%);
             border-radius: 5px;
-            transition: background 0.2s;
+            margin-bottom: 1.1rem;
         }
 
-        .chart-bar:hover {
-            background: rgba(124, 111, 156, 0.06);
+        .chart-marker {
+            position: absolute;
+            top: -6px;
+            bottom: -6px;
+            width: 2px;
+            transform: translateX(-50%);
+            background: var(--text-dim);
+            opacity: 0.55;
+            border-radius: 1px;
+            transition: left 0.9s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        .bar-name {
+        .chart-marker .marker-label {
+            position: absolute;
+            bottom: calc(100% + 4px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
             color: var(--text-dim);
             opacity: 0.55;
-            text-align: right;
-            letter-spacing: 0.02em;
+            white-space: nowrap;
         }
 
-        .bar-track {
-            height: 8px;
-            background: rgba(124, 111, 156, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, rgba(124, 111, 156, 0.35), rgba(184, 168, 216, 0.55));
-            border-radius: 4px;
-            transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .bar-value {
+        .chart-marker .marker-val {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--mono);
+            font-size: 0.7rem;
             color: var(--text-dim);
-            opacity: 0.5;
-            font-size: 0.72rem;
-            text-align: left;
+            opacity: 0.65;
+            white-space: nowrap;
         }
 
-        .chart-bar.is-you .bar-name {
+        .chart-marker.is-you {
+            width: 3px;
+            opacity: 1;
+            background: var(--accent-bright);
+            box-shadow: 0 0 12px rgba(184, 168, 216, 0.6);
+        }
+        .chart-marker.is-you .marker-label,
+        .chart-marker.is-you .marker-val {
             color: var(--accent-bright);
             opacity: 1;
             font-weight: 500;
         }
-        .chart-bar.is-you .bar-fill {
-            background: linear-gradient(90deg, rgba(184, 168, 216, 0.55), rgba(184, 168, 216, 1));
-            box-shadow: 0 0 14px rgba(184, 168, 216, 0.35);
-        }
-        .chart-bar.is-you .bar-value {
-            color: var(--accent-bright);
-            opacity: 1;
-            font-weight: 500;
+
+        .chart-scale {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            opacity: 0.35;
+            margin-top: 0.25rem;
         }
 
         .stats {
@@ -870,6 +881,32 @@
         .leaderboard-row.me {
             background: linear-gradient(90deg, rgba(184, 168, 216, 0.12), rgba(184, 168, 216, 0.04));
             box-shadow: inset 3px 0 0 var(--accent-bright);
+        }
+        .leaderboard-row.tentative {
+            background: repeating-linear-gradient(135deg, rgba(184, 168, 216, 0.04) 0 6px, transparent 6px 12px);
+            box-shadow: inset 3px 0 0 rgba(184, 168, 216, 0.4);
+            border-top: 1px dashed rgba(184, 168, 216, 0.25);
+            border-bottom: 1px dashed rgba(184, 168, 216, 0.25);
+            animation: tentativePulse 2s ease-in-out infinite;
+        }
+        .leaderboard-row.tentative .lb-rank,
+        .leaderboard-row.tentative .lb-handle > span:first-child,
+        .leaderboard-row.tentative .lb-wpm {
+            color: var(--accent-bright);
+            opacity: 0.9;
+        }
+        .leaderboard-row.tentative .tentative-hint {
+            font-size: 0.62rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            opacity: 0.55;
+            margin-left: 0.5rem;
+            font-style: italic;
+        }
+        @keyframes tentativePulse {
+            0%, 100% { box-shadow: inset 3px 0 0 rgba(184, 168, 216, 0.4); }
+            50% { box-shadow: inset 3px 0 0 rgba(184, 168, 216, 0.8); }
         }
         .leaderboard-row.podium-1 .lb-rank { color: #e8d79c; }
         .leaderboard-row.podium-2 .lb-rank { color: #c8c8d0; }
@@ -1785,6 +1822,8 @@
             // terminal exits test mode → demo resumes; will replay user's recording (currentTypist='you' + recordings set)
             terminalCtrl.exitTestMode();
             revealStatsSection();
+            tentativeWpm = wpm;
+            renderLeaderboard(lastEntries);
             showTypingResult(wpm, breakdownLines);
         }
 
@@ -1794,53 +1833,54 @@
             while (chart.firstChild) chart.removeChild(chart.firstChild);
             var title = document.createElement('h3');
             title.className = 'stats-chart-title';
-            title.textContent = 'time to type each command';
+            title.textContent = 'where you land';
             chart.appendChild(title);
 
             var cohort = [
-                { name: 'human', wpm: 80 },
-                { name: 'you', wpm: savedYouWpm > 0 ? savedYouWpm : 0, me: true },
-                { name: 'vim', wpm: 250 }
+                { key: 'vim', name: 'vim', wpm: 250 },
+                { key: 'you', name: 'you', wpm: savedYouWpm > 0 ? savedYouWpm : 0, me: true },
+                { key: 'human', name: 'human', wpm: 80 }
             ];
-            var maxSecs = 0;
-            typingPhases.forEach(function(phrase) {
-                cohort.forEach(function(c) {
-                    if (c.wpm <= 0) return;
-                    var secs = phrase.length * (60000 / (c.wpm * 5)) / 1000;
-                    if (secs > maxSecs) maxSecs = secs;
-                });
-            });
-            if (maxSecs === 0) maxSecs = 1;
+
+            // Use human typing the longest phrase as the global scale so
+            // shorter commands visibly collapse to "nothing".
+            var maxSecs = typingPhases[0].length * (60000 / (80 * 5)) / 1000;
+
+            function fmt(s) { return (s < 1 ? s.toFixed(2) : s.toFixed(1)) + 's'; }
 
             typingPhases.forEach(function(phrase) {
                 var row = document.createElement('div'); row.className = 'chart-row';
                 var label = document.createElement('div'); label.className = 'chart-label';
                 label.textContent = phrase;
                 row.appendChild(label);
-                var bars = document.createElement('div'); bars.className = 'chart-bars';
+
+                var track = document.createElement('div'); track.className = 'chart-track';
                 cohort.forEach(function(c) {
                     if (c.wpm <= 0) return;
                     var secs = phrase.length * (60000 / (c.wpm * 5)) / 1000;
-                    var bar = document.createElement('div');
-                    bar.className = 'chart-bar' + (c.me ? ' is-you' : '');
-                    bar.title = c.name + ' @ ' + Math.round(c.wpm) + ' wpm: ' + secs.toFixed(2) + 's';
-                    var name = document.createElement('div'); name.className = 'bar-name'; name.textContent = c.name;
-                    bar.appendChild(name);
-                    var track = document.createElement('div'); track.className = 'bar-track';
-                    var fill = document.createElement('div'); fill.className = 'bar-fill';
-                    var pct = Math.max(2, (secs / maxSecs) * 100);
-                    fill.style.width = '0%';
-                    requestAnimationFrame(function() { fill.style.width = pct + '%'; });
-                    track.appendChild(fill);
-                    bar.appendChild(track);
-                    var val = document.createElement('div'); val.className = 'bar-value';
-                    val.textContent = (secs < 1 ? secs.toFixed(2) : secs.toFixed(1)) + 's';
-                    bar.appendChild(val);
-                    bars.appendChild(bar);
+                    var pct = Math.min(100, Math.max(0.5, (secs / maxSecs) * 100));
+                    var m = document.createElement('div');
+                    m.className = 'chart-marker is-' + c.key + (c.me ? ' is-you' : '');
+                    m.title = c.name + ' @ ' + Math.round(c.wpm) + ' wpm: ' + fmt(secs);
+                    m.style.left = '0%';
+                    requestAnimationFrame(function() { m.style.left = pct + '%'; });
+                    var lbl = document.createElement('span'); lbl.className = 'marker-label'; lbl.textContent = c.name;
+                    m.appendChild(lbl);
+                    var val = document.createElement('span'); val.className = 'marker-val'; val.textContent = fmt(secs);
+                    m.appendChild(val);
+                    track.appendChild(m);
                 });
-                row.appendChild(bars);
+                row.appendChild(track);
                 chart.appendChild(row);
             });
+
+            // Shared scale at the bottom
+            var scale = document.createElement('div');
+            scale.className = 'chart-scale';
+            var a = document.createElement('span'); a.textContent = 'instant';
+            var b = document.createElement('span'); b.textContent = fmt(maxSecs) + '+';
+            scale.appendChild(a); scale.appendChild(b);
+            chart.appendChild(scale);
         }
 
         function revealStatsSection() {
@@ -2001,6 +2041,9 @@
         } catch (e) { /* old browser */ }
         // Also highlight own entry
         var ownHandle = savedHandle;
+        // Tentative row shown after completing a test but before submitting
+        var tentativeWpm = 0;
+        var lastEntries = [];
 
         function fetchLeaderboard() {
             var el = document.getElementById('leaderboard');
@@ -2025,6 +2068,7 @@
         }
 
         function renderLeaderboard(entries) {
+            lastEntries = entries || [];
             var el = document.getElementById('leaderboard');
             while (el.firstChild) el.removeChild(el.firstChild);
 
@@ -2034,7 +2078,7 @@
                 if (inviteIdx >= 0) showInvite(entries[inviteIdx], inviteIdx + 1);
             }
 
-            if (!entries.length) {
+            if (!entries.length && !(tentativeWpm > 0)) {
                 var empty = document.createElement('div');
                 empty.className = 'leaderboard-empty';
                 empty.textContent = 'nobody has submitted yet. be the first.';
@@ -2052,18 +2096,28 @@
             });
             el.appendChild(header);
 
+            // Compute where the tentative row would sit (rank among entries)
+            var tentativeRank = -1;
+            if (tentativeWpm > 0) {
+                tentativeRank = entries.filter(function(e) { return Number(e.wpm) > tentativeWpm; }).length;
+            }
+
             var top = entries.slice(0, 10);
             top.forEach(function(entry, i) {
+                // Insert tentative row before this real entry if that's its rank
+                if (tentativeRank === i) el.appendChild(makeTentativeRow(i + 1, tentativeWpm));
+
                 var row = document.createElement('div');
                 row.className = 'leaderboard-row';
-                if (i < 3) row.classList.add('podium-' + (i + 1));
+                var realRank = i + (tentativeRank >= 0 && tentativeRank <= i ? 1 : 0);
+                if (realRank < 3) row.classList.add('podium-' + (realRank + 1));
                 var isHighlight = highlightHandle && entry.handle === highlightHandle;
                 var isMe = ownHandle && entry.handle === ownHandle;
                 if (isHighlight || isMe) row.classList.add('me');
 
                 var rank = document.createElement('span');
                 rank.className = 'lb-rank';
-                rank.textContent = '#' + (i + 1);
+                rank.textContent = '#' + (realRank + 1);
                 row.appendChild(rank);
 
                 var handle = document.createElement('span');
@@ -2085,6 +2139,11 @@
 
                 el.appendChild(row);
             });
+
+            // If tentative ranks below the displayed top, append it at the bottom
+            if (tentativeRank >= top.length && tentativeWpm > 0) {
+                el.appendChild(makeTentativeRow(tentativeRank + 1, tentativeWpm));
+            }
 
             // If my row is outside top 10, add a "..." and show mine
             if (ownHandle) {
@@ -2108,6 +2167,22 @@
                     el.appendChild(myRow);
                 }
             }
+        }
+
+        function makeTentativeRow(rank, wpm) {
+            var row = document.createElement('div');
+            row.className = 'leaderboard-row tentative';
+            var rc = document.createElement('span'); rc.className = 'lb-rank'; rc.textContent = '#' + rank;
+            var hc = document.createElement('span'); hc.className = 'lb-handle';
+            var hcText = document.createElement('span'); hcText.textContent = 'you';
+            hc.appendChild(hcText);
+            var hint = document.createElement('span'); hint.className = 'tentative-hint'; hint.textContent = 'pending submit';
+            hc.appendChild(hint);
+            var wc = document.createElement('span'); wc.className = 'lb-wpm'; wc.textContent = Math.round(wpm) + ' wpm';
+            var savedS = (35 * (60000 / (wpm * 5))) / 1000;
+            var sc = document.createElement('span'); sc.className = 'lb-saved'; sc.textContent = (savedS * 50 * 365 / 3600).toFixed(1) + 'h';
+            row.appendChild(rc); row.appendChild(hc); row.appendChild(wc); row.appendChild(sc);
+            return row;
         }
 
         function submitToLeaderboard() {
@@ -2163,6 +2238,7 @@
                 if (data.ok) {
                     localStorage.setItem('yolo_handle', handle);
                     ownHandle = handle;
+                    tentativeWpm = 0;
                     showSubmitSuccess(data.rank, data.total, handle);
                     fetchLeaderboard();
                 } else {
