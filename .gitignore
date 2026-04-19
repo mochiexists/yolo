@@ -2,3 +2,5 @@
 .clasprc.json
 **/.clasprc.json
 node_modules/
+.playwright-mcp/
+_*.png

@@ -293,6 +293,49 @@
         .terminal-meta .fast { color: var(--green); opacity: 1; }
         .terminal-meta .blazing { color: var(--accent-bright); opacity: 1; text-shadow: 0 0 8px rgba(184, 168, 216, 0.3); }
 
+        /* Interactive test mode inside the terminal */
+        .terminal.terminal-test { cursor: text; border-color: rgba(184, 168, 216, 0.35); box-shadow: 0 0 40px rgba(184, 168, 216, 0.08); }
+        .terminal.terminal-test .terminal-text .char { color: var(--text-dim); opacity: 0.4; transition: color 0.1s, opacity 0.1s; }
+        .terminal.terminal-test .terminal-text .char.done { color: var(--green); opacity: 0.9; }
+        .terminal.terminal-test .terminal-text .char.wrong { color: var(--red); opacity: 1; background: rgba(184, 125, 125, 0.18); border-radius: 2px; }
+        .terminal.terminal-test .terminal-text .char.current {
+            color: var(--accent-bright);
+            opacity: 1;
+            border-bottom: 2px solid var(--accent-bright);
+            box-shadow: 0 2px 10px rgba(184, 168, 216, 0.4);
+        }
+        .terminal.terminal-test #termCursor { display: none; }
+
+        .terminal-badge {
+            position: absolute;
+            top: 0.7rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-bright);
+            opacity: 0.7;
+        }
+        .terminal-badge .badge-phase {
+            padding: 0.15rem 0.45rem;
+            border: 1px solid rgba(184, 168, 216, 0.25);
+            border-radius: 5px;
+            letter-spacing: 0.1em;
+        }
+
+        .terminal-input-hidden {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
         /* ── Stats (corporate parody) ── */
         .stats-section {
             margin-bottom: 3rem;
@@ -373,83 +416,12 @@
             line-height: 1.5;
         }
 
-        /* ── Typing test ── */
-        .typing-test {
-            margin-top: 1.2rem;
-            padding: 1.4rem 1.3rem;
-            background: rgba(124, 111, 156, 0.05);
-            border: 1px solid rgba(124, 111, 156, 0.15);
-            border-radius: 12px;
+        /* ── Typing result (shown after test complete) ── */
+        .typing-done {
+            margin-top: 1rem;
+            padding: 1.1rem 1rem 0.9rem;
+            border-top: 1px dashed rgba(124, 111, 156, 0.18);
             text-align: left;
-        }
-
-        .typing-prompt-label {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 0.88rem;
-            font-style: italic;
-            color: var(--text);
-            opacity: 0.55;
-            margin-bottom: 0.7rem;
-            text-align: center;
-        }
-
-        .typing-prompt-label .phase-counter {
-            font-family: var(--mono);
-            font-size: 0.75rem;
-            opacity: 0.6;
-            margin-left: 0.3rem;
-            letter-spacing: 0.05em;
-        }
-
-        .typing-target {
-            font-family: var(--mono);
-            font-size: 1.05rem;
-            padding: 0.85rem 1rem;
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 8px;
-            margin-bottom: 0.8rem;
-            letter-spacing: 0.01em;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .typing-target .char {
-            color: var(--text-dim);
-            opacity: 0.45;
-            transition: color 0.1s, opacity 0.1s;
-        }
-        .typing-target .char.done { color: var(--green); opacity: 0.9; }
-        .typing-target .char.wrong { color: var(--red); opacity: 1; background: rgba(184, 125, 125, 0.18); border-radius: 2px; }
-        .typing-target .char.current {
-            color: var(--accent-bright);
-            opacity: 1;
-            border-bottom: 2px solid var(--accent-bright);
-            box-shadow: 0 2px 10px rgba(184, 168, 216, 0.4);
-        }
-
-        .typing-input {
-            width: 100%;
-            font-family: var(--mono);
-            font-size: 0.95rem;
-            padding: 0.7rem 0.9rem;
-            background: rgba(124, 111, 156, 0.08);
-            border: 1px solid rgba(124, 111, 156, 0.2);
-            border-radius: 8px;
-            color: var(--text);
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            letter-spacing: 0.01em;
-        }
-
-        .typing-input:focus {
-            border-color: var(--accent-bright);
-            box-shadow: 0 0 0 3px rgba(184, 168, 216, 0.1);
-        }
-
-        .typing-input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .typing-controls {
@@ -459,15 +431,6 @@
             margin-top: 0.9rem;
             font-family: var(--mono);
             font-size: 0.78rem;
-        }
-
-        .typing-live {
-            color: var(--text-dim);
-            opacity: 0.7;
-        }
-        .typing-live .live-val {
-            color: var(--accent-bright);
-            font-weight: 500;
         }
 
         .typing-restart {
@@ -779,14 +742,6 @@
             opacity: 0.75;
         }
 
-        .benchmark-card .typing-test {
-            background: transparent;
-            border: none;
-            padding: 0.9rem 0.2rem 0.2rem;
-            margin-top: 0.5rem;
-            border-top: 1px dashed rgba(124, 111, 156, 0.15);
-        }
-
         .leaderboard {
             font-family: var(--mono);
             font-size: 0.88rem;
@@ -1051,13 +1006,9 @@
             .stats-toggle button { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
             .stats-toggle .wpm-suffix { display: none; }
 
-            /* Typing test */
-            .typing-test { padding: 1rem 0.9rem; }
-            .typing-target { font-size: 0.88rem; padding: 0.7rem 0.8rem; }
-            .typing-input { font-size: 0.85rem; padding: 0.6rem 0.75rem; }
+            /* Typing result */
+            .typing-done { padding: 0.9rem 0 0.2rem; margin-top: 0.5rem; }
             .typing-controls { font-size: 0.72rem; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
-            .typing-live { text-align: center; }
-            .typing-prompt-label { font-size: 0.82rem; }
             .typing-result-wpm { font-size: 1.7rem; }
             .typing-result-label { font-size: 0.9rem; }
             .typing-result-breakdown { font-size: 0.68rem; }
@@ -1083,7 +1034,6 @@
             .benchmark-cta { padding: 0.75rem 0.8rem; }
             .benchmark-cta .cta-main { font-size: 0.88rem; }
             .benchmark-cta .cta-sub { font-size: 0.72rem; }
-            .benchmark-card .typing-test { padding: 0.75rem 0 0.2rem; margin-top: 0.4rem; }
             .leaderboard { font-size: 0.8rem; }
             .leaderboard-row { grid-template-columns: 32px 1fr auto; gap: 0.5rem; padding: 0.6rem 0.85rem; }
             .leaderboard-row.header { font-size: 0.62rem; }
@@ -1125,13 +1075,18 @@
         </div>
 
         <div class="fade-up">
-            <div class="terminal" id="terminal">
-                <span class="terminal-prompt">$ </span><span class="terminal-text" id="termText"></span><span class="terminal-cursor"></span><span class="terminal-reaction" id="termReaction"></span>
+            <div class="terminal" id="terminal" onclick="focusTerminalInput()">
+                <span class="terminal-prompt">$ </span><span class="terminal-text" id="termText"></span><span class="terminal-cursor" id="termCursor"></span><span class="terminal-reaction" id="termReaction"></span>
                 <div class="terminal-meta">
                     <span id="metaKeys">0 keystrokes</span>
                     <span id="metaTime">0.0s</span>
                 </div>
+                <div class="terminal-badge" id="terminalBadge" style="display:none;">
+                    <span class="badge-label">your turn</span>
+                    <span class="badge-phase" id="badgePhase">1 / 3</span>
+                </div>
             </div>
+            <input type="text" id="typingInput" class="terminal-input-hidden" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
         </div>
 
         <div class="stats-section fade-up">
@@ -1183,37 +1138,21 @@
                 </button>
             </div>
 
-            <div class="typing-test" id="typingTest" style="display: none;">
-                <div id="typingActive">
-                    <p class="typing-prompt-label">type this <span class="phase-counter" id="phaseCounter">1 / 3</span></p>
-                    <div class="typing-target" id="typingTarget"></div>
-                    <input type="text" class="typing-input" id="typingInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="start typing...">
-                    <div class="typing-controls">
-                        <span class="typing-live">
-                            <span class="live-val" id="liveKeys">0</span> keystrokes &middot;
-                            <span class="live-val" id="liveTime">0.0s</span> &middot;
-                            <span class="live-val" id="liveWpm">0</span> wpm &middot;
-                            <span class="live-val" id="liveErrors">0</span> errors
-                        </span>
-                        <button class="typing-restart" onclick="resetTypingTest()">restart</button>
-                    </div>
+            <div class="typing-done" id="typingDone" style="display: none;">
+                <div class="typing-result">
+                    <div class="typing-result-wpm"><span id="finalWpm">0</span> wpm</div>
+                    <div class="typing-result-label">that's your real typing speed &mdash; stats updated above</div>
+                    <div class="typing-result-breakdown" id="finalBreakdown"></div>
                 </div>
-                <div id="typingDone" style="display: none;">
-                    <div class="typing-result">
-                        <div class="typing-result-wpm"><span id="finalWpm">0</span> wpm</div>
-                        <div class="typing-result-label">that's your real typing speed &mdash; stats updated above</div>
-                        <div class="typing-result-breakdown" id="finalBreakdown"></div>
-                    </div>
 
-                    <div class="submit-form" id="submitForm">
-                        <input type="text" id="submitHandle" placeholder="your handle" maxlength="24" autocomplete="off">
-                        <button id="submitBtn" onclick="submitToLeaderboard()">submit to leaderboard</button>
-                    </div>
-                    <div class="submit-status" id="submitStatus" style="display:none;"></div>
+                <div class="submit-form" id="submitForm">
+                    <input type="text" id="submitHandle" placeholder="your handle" maxlength="24" autocomplete="off">
+                    <button id="submitBtn" onclick="submitToLeaderboard()">submit to leaderboard</button>
+                </div>
+                <div class="submit-status" id="submitStatus" style="display:none;"></div>
 
-                    <div class="typing-controls" style="justify-content: center; margin-top: 0.8rem;">
-                        <button class="typing-restart" onclick="resetTypingTest()">try again</button>
-                    </div>
+                <div class="typing-controls" style="justify-content: center; margin-top: 0.8rem;">
+                    <button class="typing-restart" onclick="resetTypingTest()">try again</button>
                 </div>
             </div>
         </div>
@@ -1306,17 +1245,21 @@
         });
 
         /* ── Animated terminal sequence ── */
-        (function() {
+        var terminalCtrl = (function() {
             var termText = document.getElementById('termText');
             var termReaction = document.getElementById('termReaction');
             var terminal = document.getElementById('terminal');
             var metaKeys = document.getElementById('metaKeys');
             var metaTime = document.getElementById('metaTime');
+            var badge = document.getElementById('terminalBadge');
+            var badgePhase = document.getElementById('badgePhase');
             var pauseAfterType = 1200;
             var pauseAfterDelete = 400;
             var pauseBetweenLoops = 2500;
             var keystrokeCount = 0;
-            var currentTypist = 'human'; // synced with stats toggle
+            var currentTypist = 'human';
+            var mode = 'demo'; // 'demo' | 'test' | 'result'
+            var runToken = 0; // bumps on every mode change; stale chains bail
 
             var sequence = [
                 { text: 'claude --dangerously-skip-permissions', phase: 'phase-red', reaction: '' },
@@ -1324,49 +1267,48 @@
                 { text: 'ccy', phase: 'phase-glow', reaction: '(O.O)' },
             ];
 
-            // Expose so the stats toggle can update it
-            window._setTypist = function(mode) { currentTypist = mode; };
-
-            function resetMeta() {
-                keystrokeCount = 0;
-                updateMeta();
-            }
-
-            var replayElapsedMs = 0; // for replay mode, shown as real elapsed time
+            var replayElapsedMs = 0;
 
             function updateMeta() {
                 metaKeys.textContent = keystrokeCount + ' keystroke' + (keystrokeCount !== 1 ? 's' : '');
                 var simTime;
-                if (currentTypist === 'you' && typistData.you.recordings) {
+                if (mode === 'test') {
+                    simTime = (replayElapsedMs / 1000).toFixed(1);
+                } else if (currentTypist === 'you' && typistData.you.recordings) {
                     simTime = (replayElapsedMs / 1000).toFixed(1);
                 } else {
                     var msPerChar = typistData[currentTypist].msPerChar;
                     simTime = (keystrokeCount * msPerChar / 1000).toFixed(1);
                 }
                 metaTime.textContent = simTime + 's';
-
                 metaKeys.className = '';
                 metaTime.className = '';
                 if (keystrokeCount <= 3 && keystrokeCount > 0) {
-                    metaKeys.className = 'blazing';
-                    metaTime.className = 'blazing';
+                    metaKeys.className = 'blazing'; metaTime.className = 'blazing';
                 } else if (keystrokeCount <= 13) {
-                    metaKeys.className = 'fast';
-                    metaTime.className = 'fast';
+                    metaKeys.className = 'fast'; metaTime.className = 'fast';
                 }
             }
 
-            function typeText(text, callback, phaseIndex) {
-                // If user has a recording for this phase and they're in "you" mode, replay it
+            function resetMeta() { keystrokeCount = 0; replayElapsedMs = 0; updateMeta(); }
+
+            function showReaction(text) {
+                termReaction.textContent = text;
+                if (text) termReaction.classList.add('visible');
+                else termReaction.classList.remove('visible');
+            }
+
+            function typeText(text, callback, phaseIndex, token) {
+                if (token !== runToken) return;
                 var recs = typistData.you && typistData.you.recordings;
                 if (currentTypist === 'you' && recs && recs[phaseIndex] && recs[phaseIndex].length) {
-                    replayRecording(recs[phaseIndex], callback);
+                    replayRecording(recs[phaseIndex], callback, token);
                     return;
                 }
-                // Default: smooth typing at typist's WPM
                 replayElapsedMs = 0;
                 var i = 0;
                 function step() {
+                    if (token !== runToken) return;
                     if (i <= text.length) {
                         termText.textContent = text.slice(0, i);
                         if (i > 0) { keystrokeCount++; updateMeta(); }
@@ -1377,17 +1319,14 @@
                 step();
             }
 
-            function replayRecording(recording, callback) {
-                replayElapsedMs = 0;
-                keystrokeCount = 0;
-                updateMeta();
+            function replayRecording(recording, callback, token) {
+                if (token !== runToken) return;
+                replayElapsedMs = 0; keystrokeCount = 0; updateMeta();
                 var start = Date.now();
                 var i = 0;
                 function step() {
-                    if (i >= recording.length) {
-                        callback();
-                        return;
-                    }
+                    if (token !== runToken) return;
+                    if (i >= recording.length) { callback(); return; }
                     var snap = recording[i];
                     var now = Date.now() - start;
                     if (now >= snap.t) {
@@ -1405,45 +1344,113 @@
             }
 
             function deleteText(callback) {
-                // cmd+backspace — clear the whole line instantly
                 termText.textContent = '';
                 setTimeout(callback, 120);
             }
 
-            function showReaction(text) {
-                termReaction.textContent = text;
-                if (text) {
-                    termReaction.classList.add('visible');
-                } else {
-                    termReaction.classList.remove('visible');
-                }
-            }
-
-            function runSequence(index) {
+            function runSequence(index, token) {
+                if (token !== runToken || mode !== 'demo') return;
                 var item = sequence[index];
                 terminal.className = 'terminal ' + item.phase;
                 resetMeta();
                 showReaction('');
-
                 typeText(item.text, function() {
+                    if (token !== runToken || mode !== 'demo') return;
                     showReaction(item.reaction);
                     setTimeout(function() {
+                        if (token !== runToken || mode !== 'demo') return;
                         showReaction('');
                         deleteText(function() {
+                            if (token !== runToken || mode !== 'demo') return;
                             terminal.className = 'terminal';
-                            setTimeout(function() {
-                                var next = (index + 1) % sequence.length;
-                                var delay = next === 0 ? pauseBetweenLoops : pauseAfterDelete;
-                                setTimeout(function() {
-                                    runSequence(next);
-                                }, delay);
-                            }, 0);
+                            var next = (index + 1) % sequence.length;
+                            var delay = next === 0 ? pauseBetweenLoops : pauseAfterDelete;
+                            setTimeout(function() { runSequence(next, token); }, delay);
                         });
                     }, pauseAfterType);
-                }, index);
+                }, index, token);
             }
 
-            setTimeout(function() { runSequence(0); }, 800);
+            function startDemo() {
+                mode = 'demo';
+                runToken++;
+                terminal.classList.remove('terminal-test');
+                badge.style.display = 'none';
+                showReaction('');
+                var token = runToken;
+                setTimeout(function() { runSequence(0, token); }, 100);
+            }
+
+            function setTypist(m) {
+                currentTypist = m;
+                if (mode === 'demo') {
+                    // Restart demo so it picks up new recordings (for 'you' mode replay)
+                    startDemo();
+                }
+            }
+
+            function renderTestTarget(target, typed) {
+                while (termText.firstChild) termText.removeChild(termText.firstChild);
+                for (var i = 0; i < target.length; i++) {
+                    var span = document.createElement('span');
+                    var cls = 'char';
+                    if (i < typed.length) cls += typed[i] === target[i] ? ' done' : ' wrong';
+                    else if (i === typed.length) cls += ' current';
+                    span.className = cls;
+                    span.textContent = target[i];
+                    termText.appendChild(span);
+                }
+            }
+
+            function enterTestMode(phaseIdx, totalPhases) {
+                mode = 'test';
+                runToken++; // kill any in-flight demo chain
+                terminal.className = 'terminal terminal-test';
+                showReaction('');
+                termText.textContent = '';
+                keystrokeCount = 0;
+                replayElapsedMs = 0;
+                updateMeta();
+                badge.style.display = 'flex';
+                badgePhase.textContent = (phaseIdx + 1) + ' / ' + totalPhases;
+            }
+
+            function setTestPhase(phaseIdx, totalPhases) {
+                badgePhase.textContent = (phaseIdx + 1) + ' / ' + totalPhases;
+            }
+
+            function setTestStats(keys, elapsedMs) {
+                keystrokeCount = keys;
+                replayElapsedMs = elapsedMs;
+                updateMeta();
+            }
+
+            function showTestReaction(text, ms, cb) {
+                showReaction(text);
+                setTimeout(function() { showReaction(''); if (cb) cb(); }, ms);
+            }
+
+            function exitTestMode() {
+                mode = 'demo';
+                startDemo();
+            }
+
+            // Back-compat shim for switchTypist's previous indirection
+            window._setTypist = setTypist;
+
+            setTimeout(function() { runSequence(0, runToken); }, 800);
+
+            return {
+                startDemo: startDemo,
+                setTypist: setTypist,
+                enterTestMode: enterTestMode,
+                setTestPhase: setTestPhase,
+                renderTarget: renderTestTarget,
+                setTestStats: setTestStats,
+                showTestReaction: showTestReaction,
+                exitTestMode: exitTestMode,
+                isTestMode: function() { return mode === 'test'; }
+            };
         })();
 
         /* ── Stats typist toggle ── */
@@ -1496,8 +1503,11 @@
             document.getElementById('statKeys').textContent = '12.7x';
             document.getElementById('statTime').textContent = data.perInvoke().toFixed(1) + 's';
             document.getElementById('statYear').textContent = data.perYear().toFixed(1) + 'h';
-            if (window._setTypist) window._setTypist(mode);
+            terminalCtrl.setTypist(mode);
 
+            if (mode !== 'you' && terminalCtrl.isTestMode()) {
+                cancelTypingTest();
+            }
             if (mode === 'you' && !opts.suppressOpen) {
                 openTypingTest({ scroll: true });
             }
@@ -1505,21 +1515,24 @@
 
         function openTypingTest(opts) {
             opts = opts || {};
-            var test = document.getElementById('typingTest');
             var footer = document.getElementById('benchmarkFooter');
-            test.style.display = 'block';
             if (footer) footer.style.display = 'none';
-            if (savedYouWpm === 0) {
-                resetTypingTest();
-                var input = document.getElementById('typingInput');
-                if (input && !opts.noFocus) setTimeout(function() { input.focus(); }, 250);
-            } else {
-                showTypingResult(savedYouWpm, null);
-            }
-            if (opts.scroll) {
-                var card = document.querySelector('.benchmark-card');
-                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            document.getElementById('typingDone').style.display = 'none';
+            resetTypingTest();
+        }
+
+        function focusTerminalInput() {
+            if (!terminalCtrl.isTestMode()) return;
+            var input = document.getElementById('typingInput');
+            if (input) input.focus({ preventScroll: true });
+        }
+
+        function cancelTypingTest() {
+            if (typingState.liveTimer) { clearInterval(typingState.liveTimer); typingState.liveTimer = null; }
+            typingState.phaseStartTime = 0;
+            terminalCtrl.exitTestMode();
+            var footer = document.getElementById('benchmarkFooter');
+            if (footer) footer.style.display = '';
         }
 
         /* ── Typing test ── */
@@ -1538,124 +1551,79 @@
             liveTimer: null
         };
 
-        function renderTypingTarget(target, typed) {
-            var el = document.getElementById('typingTarget');
-            while (el.firstChild) el.removeChild(el.firstChild);
-            for (var i = 0; i < target.length; i++) {
-                var span = document.createElement('span');
-                var cls = 'char';
-                if (i < typed.length) {
-                    cls += typed[i] === target[i] ? ' done' : ' wrong';
-                } else if (i === typed.length) {
-                    cls += ' current';
-                }
-                span.className = cls;
-                span.textContent = target[i];
-                el.appendChild(span);
-            }
-        }
-
         function updateLiveStats() {
             var input = document.getElementById('typingInput');
             var target = typingPhases[typingState.phase];
             var typed = input.value;
-
             var errors = 0;
             for (var i = 0; i < typed.length; i++) {
                 if (i >= target.length || typed[i] !== target[i]) errors++;
             }
             typingState.errors = errors;
-            document.getElementById('liveErrors').textContent = errors;
-            document.getElementById('liveKeys').textContent = typingState.keystrokes;
-
-            if (typingState.phaseStartTime > 0) {
-                var elapsedMs = Date.now() - typingState.phaseStartTime;
-                document.getElementById('liveTime').textContent = (elapsedMs / 1000).toFixed(1) + 's';
-
-                if (typed.length > 0) {
-                    var elapsedMin = elapsedMs / 1000 / 60;
-                    var correctChars = 0;
-                    for (var j = 0; j < typed.length && j < target.length; j++) {
-                        if (typed[j] === target[j]) correctChars++;
-                    }
-                    var wpm = elapsedMin > 0 ? Math.round((correctChars / 5) / elapsedMin) : 0;
-                    document.getElementById('liveWpm').textContent = wpm;
-                }
-            }
+            var elapsed = typingState.phaseStartTime > 0 ? (Date.now() - typingState.phaseStartTime) : 0;
+            terminalCtrl.setTestStats(typingState.keystrokes, elapsed);
         }
 
         function onTypingInput(e) {
+            if (!terminalCtrl.isTestMode()) return;
             var input = document.getElementById('typingInput');
             var target = typingPhases[typingState.phase];
             var typed = input.value;
 
             if (typingState.phaseStartTime === 0 && typed.length > 0) {
                 typingState.phaseStartTime = Date.now();
-                if (!typingState.recordings[typingState.phase]) {
-                    typingState.recordings[typingState.phase] = [];
-                }
-                if (!typingState.liveTimer) {
-                    typingState.liveTimer = setInterval(updateLiveStats, 60);
-                }
+                if (!typingState.recordings[typingState.phase]) typingState.recordings[typingState.phase] = [];
+                if (!typingState.liveTimer) typingState.liveTimer = setInterval(updateLiveStats, 60);
             }
 
-            // Count keystroke (any input event counts — type, backspace, paste)
             typingState.keystrokes++;
 
-            // Record snapshot with relative timestamp
             if (typingState.phaseStartTime > 0) {
                 var t = Date.now() - typingState.phaseStartTime;
                 typingState.recordings[typingState.phase].push({ t: t, v: typed });
             }
 
-            renderTypingTarget(target, typed);
+            terminalCtrl.renderTarget(target, typed);
             updateLiveStats();
 
             if (typed === target) {
                 var timeMs = Date.now() - typingState.phaseStartTime;
-                typingState.phaseResults.push({
-                    chars: target.length,
-                    timeMs: timeMs,
-                    errors: typingState.errors
-                });
-                typingState.phase++;
-
-                if (typingState.phase >= typingPhases.length) {
-                    finishTypingTest();
+                typingState.phaseResults.push({ chars: target.length, timeMs: timeMs, errors: typingState.errors });
+                var reactions = ['', '(^.^)', '(O.O)'];
+                var reaction = reactions[typingState.phase] || '';
+                if (typingState.liveTimer) { clearInterval(typingState.liveTimer); typingState.liveTimer = null; }
+                var nextPhase = typingState.phase + 1;
+                if (nextPhase >= typingPhases.length) {
+                    terminalCtrl.showTestReaction(reaction, 800, function() { finishTypingTest(); });
                 } else {
-                    input.value = '';
-                    typingState.phaseStartTime = 0;
-                    typingState.errors = 0;
-                    document.getElementById('phaseCounter').textContent = (typingState.phase + 1) + ' / ' + typingPhases.length;
-                    renderTypingTarget(typingPhases[typingState.phase], '');
-                    document.getElementById('liveWpm').textContent = '0';
-                    document.getElementById('liveErrors').textContent = '0';
-                    document.getElementById('liveTime').textContent = '0.0s';
+                    terminalCtrl.showTestReaction(reaction, 700, function() {
+                        typingState.phase = nextPhase;
+                        typingState.phaseStartTime = 0;
+                        typingState.errors = 0;
+                        input.value = '';
+                        terminalCtrl.setTestPhase(nextPhase, typingPhases.length);
+                        terminalCtrl.renderTarget(typingPhases[nextPhase], '');
+                        terminalCtrl.setTestStats(typingState.keystrokes, 0);
+                        focusTerminalInput();
+                    });
                 }
             }
         }
 
         function finishTypingTest() {
-            if (typingState.liveTimer) {
-                clearInterval(typingState.liveTimer);
-                typingState.liveTimer = null;
-            }
+            if (typingState.liveTimer) { clearInterval(typingState.liveTimer); typingState.liveTimer = null; }
 
-            var totalChars = 0;
-            var totalTimeMs = 0;
-            typingState.phaseResults.forEach(function(r) {
-                totalChars += r.chars;
-                totalTimeMs += r.timeMs;
-            });
+            var totalChars = 0, totalTimeMs = 0;
+            typingState.phaseResults.forEach(function(r) { totalChars += r.chars; totalTimeMs += r.timeMs; });
             var minutes = totalTimeMs / 1000 / 60;
             var wpm = minutes > 0 ? (totalChars / 5) / minutes : 0;
 
             localStorage.setItem('yolo_you_wpm', wpm.toString());
-            try {
-                localStorage.setItem('yolo_you_recording', JSON.stringify(typingState.recordings));
-            } catch (e) { /* storage full or disabled */ }
+            try { localStorage.setItem('yolo_you_recording', JSON.stringify(typingState.recordings)); }
+            catch (e) { /* storage full */ }
             savedYouWpm = wpm;
             typistData.you.recordings = typingState.recordings;
+            typistData.you.msPerChar = wpmToMsPerChar(wpm);
 
             var breakdownLines = typingState.phaseResults.map(function(r, i) {
                 var mins = r.timeMs / 1000 / 60;
@@ -1664,58 +1632,54 @@
                 return label + ': ' + phaseWpm + ' wpm · ' + (r.timeMs / 1000).toFixed(1) + 's';
             });
 
-            showTypingResult(wpm, breakdownLines);
-
             document.getElementById('youWpm').textContent = Math.round(wpm);
-            typistData.you.msPerChar = wpmToMsPerChar(wpm);
+            // Update stats without reopening test
             switchTypist('you', { suppressOpen: true });
+            // terminal exits test mode → demo resumes; will replay user's recording (currentTypist='you' + recordings set)
+            terminalCtrl.exitTestMode();
+            showTypingResult(wpm, breakdownLines);
         }
 
         function showTypingResult(wpm, breakdownLines) {
-            document.getElementById('typingActive').style.display = 'none';
-            document.getElementById('typingDone').style.display = 'block';
+            var done = document.getElementById('typingDone');
+            done.style.display = 'block';
             document.getElementById('finalWpm').textContent = Math.round(wpm);
             var bd = document.getElementById('finalBreakdown');
             while (bd.firstChild) bd.removeChild(bd.firstChild);
             if (breakdownLines && breakdownLines.length) {
                 breakdownLines.forEach(function(line, i) {
                     if (i > 0) bd.appendChild(document.createElement('br'));
-                    var t = document.createTextNode(line);
-                    bd.appendChild(t);
+                    bd.appendChild(document.createTextNode(line));
                 });
             } else {
                 bd.textContent = 'previously saved — click try again to beat it';
             }
             bd.style.display = 'block';
+            // Ensure CTA stays hidden once we show the result
+            var footer = document.getElementById('benchmarkFooter');
+            if (footer) footer.style.display = 'none';
         }
 
         function resetTypingTest() {
             typingState = {
-                phase: 0,
-                phaseStartTime: 0,
-                errors: 0,
-                keystrokes: 0,
-                phaseResults: [],
-                recordings: [],
-                liveTimer: null
+                phase: 0, phaseStartTime: 0, errors: 0, keystrokes: 0,
+                phaseResults: [], recordings: [], liveTimer: null
             };
-            document.getElementById('typingActive').style.display = 'block';
-            document.getElementById('typingDone').style.display = 'none';
-            document.getElementById('phaseCounter').textContent = '1 / ' + typingPhases.length;
-            document.getElementById('liveKeys').textContent = '0';
-            document.getElementById('liveTime').textContent = '0.0s';
-            document.getElementById('liveWpm').textContent = '0';
-            document.getElementById('liveErrors').textContent = '0';
             var input = document.getElementById('typingInput');
             input.value = '';
             input.disabled = false;
-            renderTypingTarget(typingPhases[0], '');
+            terminalCtrl.enterTestMode(0, typingPhases.length);
+            terminalCtrl.renderTarget(typingPhases[0], '');
+            document.getElementById('typingDone').style.display = 'none';
             // Reset submit form state for next attempt
             var form = document.getElementById('submitForm');
             var status = document.getElementById('submitStatus');
             if (form) form.style.display = '';
             if (status) { status.style.display = 'none'; while (status.firstChild) status.removeChild(status.firstChild); }
-            setTimeout(function() { input.focus(); }, 50);
+            // Scroll terminal into view + focus input
+            var term = document.getElementById('terminal');
+            if (term) term.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(function() { input.focus({ preventScroll: true }); }, 350);
         }
 
         document.getElementById('typingInput').addEventListener('input', onTypingInput);
@@ -1732,37 +1696,27 @@
         });
 
         function flagPasteAttempt() {
-            var prompt = document.querySelector('.typing-prompt-label');
-            var original = prompt.textContent;
-            prompt.textContent = 'nice try. type it yourself.';
-            prompt.style.color = 'var(--red)';
-            prompt.style.opacity = '1';
+            var badge = document.getElementById('terminalBadge');
+            var label = badge && badge.querySelector('.badge-label');
+            if (!label) return;
+            var original = label.textContent;
+            label.textContent = 'nice try. type it.';
+            label.style.color = 'var(--red)';
             setTimeout(function() {
-                prompt.style.color = '';
-                prompt.style.opacity = '';
-                // Rebuild original with phase counter
-                while (prompt.firstChild) prompt.removeChild(prompt.firstChild);
-                prompt.appendChild(document.createTextNode('type this '));
-                var span = document.createElement('span');
-                span.className = 'phase-counter';
-                span.id = 'phaseCounter';
-                span.textContent = (typingState.phase + 1) + ' / ' + typingPhases.length;
-                prompt.appendChild(span);
+                label.style.color = '';
+                label.textContent = original;
             }, 1600);
         }
 
-        // Ctrl+C (SIGINT) or Cmd/Ctrl+Backspace (clear-line) to restart the typing test
-        // Enter on the result screen also restarts
+        // Ctrl+C or Cmd/Ctrl+Backspace restarts the test. Enter on the result screen also restarts.
         document.addEventListener('keydown', function(e) {
-            var test = document.getElementById('typingTest');
-            if (test.style.display === 'none') return;
+            var inTest = terminalCtrl && terminalCtrl.isTestMode();
+            var doneVisible = document.getElementById('typingDone').style.display !== 'none';
+            if (!inTest && !doneVisible) return;
 
             var isRestart = ((e.ctrlKey || e.metaKey) && e.key === 'c') ||
                             ((e.ctrlKey || e.metaKey) && (e.key === 'Backspace' || e.key === 'Delete'));
-
-            // Enter restarts only when the result screen is visible (no input focused for typing)
-            var doneVisible = document.getElementById('typingDone').style.display !== 'none';
-            if (e.key === 'Enter' && doneVisible) isRestart = true;
+            if (e.key === 'Enter' && doneVisible && !inTest) isRestart = true;
 
             if (isRestart) {
                 e.preventDefault();
