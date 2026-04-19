@@ -114,17 +114,24 @@
 
         @media (min-width: 980px) {
             .container { max-width: 1060px; }
+            /* Hero elements stay narrow and centered even when container widens */
+            .cat-wrap, h1, .tagline, .install-section,
+            .stats-section, .footer {
+                max-width: 580px;
+                margin-left: auto;
+                margin-right: auto;
+            }
             .split {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 2.4rem;
                 align-items: start;
                 text-align: left;
-                margin-top: 0.5rem;
+                margin: 0.5rem 0 2rem;
             }
-            .split-left, .split-right { min-width: 0; }
-            .split-left .stats-toggle-wrap { text-align: center; }
-            .split-left .stats-section { text-align: center; }
+            .split > * { min-width: 0; }
+            .split .stats-toggle-wrap { text-align: center; }
+            .split .benchmark-card { margin-bottom: 0; }
         }
 
         /* ── Cat ── */
@@ -311,7 +318,12 @@
         .terminal-meta .blazing { color: var(--accent-bright); opacity: 1; text-shadow: 0 0 8px rgba(184, 168, 216, 0.3); }
 
         /* Interactive test mode inside the terminal */
-        .terminal.terminal-test { cursor: text; border-color: rgba(184, 168, 216, 0.35); box-shadow: 0 0 40px rgba(184, 168, 216, 0.08); }
+        .terminal.terminal-test {
+            cursor: text;
+            border-color: rgba(184, 168, 216, 0.35);
+            box-shadow: 0 0 40px rgba(184, 168, 216, 0.08);
+            padding-top: 2.6rem; /* room so the top-right badge never overlaps text */
+        }
         .terminal.terminal-test .terminal-text .char { color: var(--text-dim); opacity: 0.4; transition: color 0.1s, opacity 0.1s; }
         .terminal.terminal-test .terminal-text .char.done { color: var(--green); opacity: 0.9; }
         .terminal.terminal-test .terminal-text .char.wrong { color: var(--red); opacity: 1; background: rgba(184, 125, 125, 0.18); border-radius: 2px; }
@@ -424,97 +436,104 @@
             font-weight: 400;
             color: var(--text);
             opacity: 0.55;
-            margin-bottom: 1rem;
+            margin-bottom: 1.1rem;
             text-align: center;
         }
 
-        .chart-row {
-            margin: 0 0 1.8rem;
+        .chart-phase {
+            margin-bottom: 1.2rem;
             text-align: left;
-            padding: 0 0.5rem;
         }
+        .chart-phase:last-of-type { margin-bottom: 0.3rem; }
 
-        .chart-label {
+        .chart-phase-label {
             font-family: var(--mono);
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: var(--text-dim);
-            opacity: 0.65;
-            margin-bottom: 1.4rem;
+            opacity: 0.6;
+            padding: 0 0.2rem 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .chart-track {
-            position: relative;
-            height: 10px;
-            background: linear-gradient(90deg,
-                rgba(125, 184, 138, 0.22) 0%,
-                rgba(125, 184, 138, 0.14) 25%,
-                rgba(184, 168, 216, 0.14) 55%,
-                rgba(184, 125, 125, 0.22) 100%);
-            border-radius: 5px;
-            margin-bottom: 1.1rem;
+        .chart-row {
+            display: grid;
+            grid-template-columns: 46px 1fr 60px;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.18rem 0.2rem;
         }
 
-        .chart-marker {
-            position: absolute;
-            top: -6px;
-            bottom: -6px;
-            width: 2px;
-            transform: translateX(-50%);
-            background: var(--text-dim);
-            opacity: 0.55;
-            border-radius: 1px;
-            transition: left 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .chart-marker .marker-label {
-            position: absolute;
-            bottom: calc(100% + 4px);
-            left: 50%;
-            transform: translateX(-50%);
+        .chart-row-name {
             font-family: var(--mono);
             font-size: 0.6rem;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
             color: var(--text-dim);
             opacity: 0.55;
-            white-space: nowrap;
         }
 
-        .chart-marker .marker-val {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 50%;
-            transform: translateX(-50%);
+        .chart-row-val {
             font-family: var(--mono);
             font-size: 0.7rem;
             color: var(--text-dim);
-            opacity: 0.65;
-            white-space: nowrap;
+            opacity: 0.7;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
         }
 
-        .chart-marker.is-you {
-            width: 3px;
-            opacity: 1;
-            background: var(--accent-bright);
-            box-shadow: 0 0 12px rgba(184, 168, 216, 0.6);
+        .chart-bar-track {
+            position: relative;
+            height: 8px;
+            background: rgba(124, 111, 156, 0.07);
+            border-radius: 4px;
+            overflow: hidden;
         }
-        .chart-marker.is-you .marker-label,
-        .chart-marker.is-you .marker-val {
+
+        .chart-bar-fill {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 0;
+            border-radius: 4px;
+            background: linear-gradient(90deg,
+                rgba(142, 207, 154, 0.55) 0%,
+                rgba(142, 207, 154, 0.45) 30%,
+                rgba(184, 168, 216, 0.4) 60%,
+                rgba(207, 142, 142, 0.55) 100%);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .chart-row.is-you .chart-row-name,
+        .chart-row.is-you .chart-row-val {
             color: var(--accent-bright);
             opacity: 1;
             font-weight: 500;
+        }
+
+        .chart-row.is-you .chart-bar-fill {
+            background: linear-gradient(90deg,
+                rgba(184, 168, 216, 0.8) 0%,
+                rgba(184, 168, 216, 0.55) 60%,
+                rgba(207, 142, 142, 0.6) 100%);
+            box-shadow: 0 0 14px rgba(184, 168, 216, 0.35);
         }
 
         .chart-scale {
             display: flex;
             justify-content: space-between;
             font-family: var(--mono);
-            font-size: 0.6rem;
-            letter-spacing: 0.1em;
+            font-size: 0.58rem;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
             color: var(--text-dim);
             opacity: 0.35;
-            margin-top: 0.25rem;
+            margin-top: 0.4rem;
+            padding: 0 0.2rem;
+            padding-left: calc(46px + 0.75rem);
+            padding-right: calc(60px + 0.75rem);
         }
 
         .stats {
@@ -1169,6 +1188,11 @@
             .stat-label { font-size: 0.82rem; }
             .stat-fine-print { font-size: 0.78rem; }
 
+            /* Chart: tighter columns so the bar still has room to breathe */
+            .chart-phase-label { font-size: 0.7rem; }
+            .chart-row { grid-template-columns: 38px 1fr 50px; gap: 0.55rem; }
+            .chart-scale { padding-left: calc(38px + 0.55rem); padding-right: calc(50px + 0.55rem); }
+
             /* Stats toggle — drop the wpm suffix, let buttons breathe */
             .stats-toggle { width: 100%; justify-content: center; }
             .stats-toggle button { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
@@ -1254,42 +1278,24 @@
 
             <div class="fade-up">
                 <div class="terminal" id="terminal" onclick="focusTerminalInput()">
-                <span class="terminal-prompt">$ </span><span class="terminal-text" id="termText"></span><span class="terminal-cursor" id="termCursor"></span><span class="terminal-reaction" id="termReaction"></span>
-                <div class="terminal-meta">
-                    <span id="metaKeys">0 keystrokes</span>
-                    <span id="metaTime">0.0s</span>
-                    <span id="metaAcc" style="display:none;">100%</span>
+                    <span class="terminal-prompt">$ </span><span class="terminal-text" id="termText"></span><span class="terminal-cursor" id="termCursor"></span><span class="terminal-reaction" id="termReaction"></span>
+                    <div class="terminal-meta">
+                        <span id="metaKeys">0 keystrokes</span>
+                        <span id="metaTime">0.0s</span>
+                        <span id="metaAcc" style="display:none;">100%</span>
+                    </div>
+                    <div class="terminal-badge" id="terminalBadge" style="display:none;">
+                        <span class="badge-label">your turn</span>
+                        <span class="badge-phase" id="badgePhase">1 / 3</span>
+                        <button class="badge-restart" type="button" onclick="event.stopPropagation(); resetTypingTest();" title="restart test (⌃C / ⌘⌫)">restart</button>
+                    </div>
                 </div>
-                <div class="terminal-badge" id="terminalBadge" style="display:none;">
-                    <span class="badge-label">your turn</span>
-                    <span class="badge-phase" id="badgePhase">1 / 3</span>
-                    <button class="badge-restart" type="button" onclick="event.stopPropagation(); resetTypingTest();" title="restart test (⌃C / ⌘⌫)">restart</button>
-                </div>
+                <input type="text" id="typingInput" class="terminal-input-hidden" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
             </div>
-            <input type="text" id="typingInput" class="terminal-input-hidden" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
-        </div>
-
-        <div class="stats-section fade-up" id="statsSection" style="display:none;">
-            <div class="stats-chart" id="statsChart"></div>
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-number" id="statKeys">12.7x</div>
-                    <div class="stat-label">fewer keystrokes</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="statTime">5.3s</div>
-                    <div class="stat-label">saved per invocation</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="statYear">26.6h</div>
-                    <div class="stat-label">saved per year</div>
-                </div>
-            </div>
-            <p class="stat-fine-print">ccy is faster than typing it out &mdash; for everyone, no matter how fast you type</p>
-        </div>
           </div>
+
           <div class="split-right">
-        <div class="benchmark-card fade-up">
+            <div class="benchmark-card fade-up">
             <div class="benchmark-invite" id="benchmarkInvite" style="display: none;">
                 <span class="invite-text">
                     <span class="invite-handle" id="inviteHandle"></span>
@@ -1334,6 +1340,25 @@
             </div>
         </div>
           </div>
+        </div>
+
+        <div class="stats-section fade-up" id="statsSection" style="display:none;">
+            <div class="stats-chart" id="statsChart"></div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="statKeys">12.7x</div>
+                    <div class="stat-label">fewer keystrokes</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="statTime">5.3s</div>
+                    <div class="stat-label">saved per invocation</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="statYear">26.6h</div>
+                    <div class="stat-label">saved per year</div>
+                </div>
+            </div>
+            <p class="stat-fine-print">ccy is faster than typing it out &mdash; for everyone, no matter how fast you type</p>
         </div>
 
         <div class="footer fade-up">
@@ -1883,43 +1908,65 @@
                 { key: 'human', name: 'human', wpm: 80 }
             ];
 
-            // Use human typing the longest phrase as the global scale so
-            // shorter commands visibly collapse to "nothing".
+            // Global scale: human typing the longest phrase. Shorter commands
+            // visibly collapse toward "nothing".
             var maxSecs = typingPhases[0].length * (60000 / (80 * 5)) / 1000;
 
             function fmt(s) { return (s < 1 ? s.toFixed(2) : s.toFixed(1)) + 's'; }
 
             typingPhases.forEach(function(phrase) {
-                var row = document.createElement('div'); row.className = 'chart-row';
-                var label = document.createElement('div'); label.className = 'chart-label';
-                label.textContent = phrase;
-                row.appendChild(label);
+                var phaseEl = document.createElement('div');
+                phaseEl.className = 'chart-phase';
 
-                var track = document.createElement('div'); track.className = 'chart-track';
+                var phaseLabel = document.createElement('div');
+                phaseLabel.className = 'chart-phase-label';
+                phaseLabel.textContent = phrase;
+                phaseEl.appendChild(phaseLabel);
+
                 cohort.forEach(function(c) {
-                    if (c.wpm <= 0) return;
-                    var secs = phrase.length * (60000 / (c.wpm * 5)) / 1000;
-                    var pct = Math.min(100, Math.max(0.5, (secs / maxSecs) * 100));
-                    var m = document.createElement('div');
-                    m.className = 'chart-marker is-' + c.key + (c.me ? ' is-you' : '');
-                    m.title = c.name + ' @ ' + Math.round(c.wpm) + ' wpm: ' + fmt(secs);
-                    m.style.left = '0%';
-                    requestAnimationFrame(function() { m.style.left = pct + '%'; });
-                    var lbl = document.createElement('span'); lbl.className = 'marker-label'; lbl.textContent = c.name;
-                    m.appendChild(lbl);
-                    var val = document.createElement('span'); val.className = 'marker-val'; val.textContent = fmt(secs);
-                    m.appendChild(val);
-                    track.appendChild(m);
+                    var row = document.createElement('div');
+                    row.className = 'chart-row' + (c.me ? ' is-you' : '');
+
+                    var name = document.createElement('span');
+                    name.className = 'chart-row-name';
+                    name.textContent = c.name;
+                    row.appendChild(name);
+
+                    var track = document.createElement('div');
+                    track.className = 'chart-bar-track';
+                    var fill = document.createElement('div');
+                    fill.className = 'chart-bar-fill';
+                    track.appendChild(fill);
+                    row.appendChild(track);
+
+                    var val = document.createElement('span');
+                    val.className = 'chart-row-val';
+                    row.appendChild(val);
+
+                    if (c.wpm <= 0) {
+                        val.textContent = '—';
+                        val.style.opacity = '0.35';
+                    } else {
+                        var secs = phrase.length * (60000 / (c.wpm * 5)) / 1000;
+                        var pct = Math.min(100, Math.max(1, (secs / maxSecs) * 100));
+                        row.title = c.name + ' @ ' + Math.round(c.wpm) + ' wpm: ' + fmt(secs);
+                        val.textContent = fmt(secs);
+                        // Stretch the gradient so each bar shows the slice of
+                        // the global green→red scale proportional to its length.
+                        fill.style.backgroundSize = (100 / pct * 100) + '% 100%';
+                        requestAnimationFrame(function() { fill.style.width = pct + '%'; });
+                    }
+
+                    phaseEl.appendChild(row);
                 });
-                row.appendChild(track);
-                chart.appendChild(row);
+
+                chart.appendChild(phaseEl);
             });
 
-            // Shared scale at the bottom
             var scale = document.createElement('div');
             scale.className = 'chart-scale';
             var a = document.createElement('span'); a.textContent = 'instant';
-            var b = document.createElement('span'); b.textContent = fmt(maxSecs) + '+';
+            var b = document.createElement('span'); b.textContent = fmt(maxSecs);
             scale.appendChild(a); scale.appendChild(b);
             chart.appendChild(scale);
         }
