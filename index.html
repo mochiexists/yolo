@@ -116,7 +116,7 @@
             .container { max-width: 1060px; }
             /* Hero elements stay narrow and centered even when container widens */
             .cat-wrap, h1, .tagline, .install-section,
-            .stats-section, .footer {
+            .footer {
                 max-width: 580px;
                 margin-left: auto;
                 margin-right: auto;
@@ -999,6 +999,44 @@
             font-size: 0.82rem;
         }
 
+        .lb-toggle {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            opacity: 0.45;
+            margin-left: 0.45rem;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s, transform 0.2s;
+            display: inline-block;
+        }
+        .lb-toggle:hover { opacity: 0.9; }
+        .lb-toggle.open { transform: rotate(90deg); opacity: 0.7; }
+
+        .lb-history {
+            display: none;
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid rgba(124, 111, 156, 0.06);
+        }
+        .lb-history.open { display: block; }
+        .lb-history-row {
+            display: grid;
+            grid-template-columns: 40px 1fr auto auto;
+            gap: 0.8rem;
+            padding: 0.38rem 1.1rem 0.38rem 2.2rem;
+            align-items: center;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            opacity: 0.7;
+        }
+        .lb-history-row .lb-wpm { opacity: 0.8; font-weight: 400; }
+        .lb-history-date {
+            font-size: 0.68rem;
+            opacity: 0.55;
+            font-style: italic;
+            font-family: 'Crimson Pro', Georgia, serif;
+        }
+
         .leaderboard-empty {
             padding: 1.5rem 1rem;
             text-align: center;
@@ -1301,6 +1339,25 @@
                 </div>
                 <input type="text" id="typingInput" class="terminal-input-hidden" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
             </div>
+
+            <div class="stats-section fade-up" id="statsSection" style="display:none;">
+                <div class="stats-chart" id="statsChart"></div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number" id="statKeys">12.7x</div>
+                        <div class="stat-label">fewer keystrokes</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="statTime">5.3s</div>
+                        <div class="stat-label">saved per invocation</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="statYear">26.6h</div>
+                        <div class="stat-label">saved per year</div>
+                    </div>
+                </div>
+                <p class="stat-fine-print">ccy is faster than typing it out &mdash; for everyone, no matter how fast you type</p>
+            </div>
           </div>
 
           <div class="split-right">
@@ -1349,25 +1406,6 @@
             </div>
         </div>
           </div>
-        </div>
-
-        <div class="stats-section fade-up" id="statsSection" style="display:none;">
-            <div class="stats-chart" id="statsChart"></div>
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-number" id="statKeys">12.7x</div>
-                    <div class="stat-label">fewer keystrokes</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="statTime">5.3s</div>
-                    <div class="stat-label">saved per invocation</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="statYear">26.6h</div>
-                    <div class="stat-label">saved per year</div>
-                </div>
-            </div>
-            <p class="stat-fine-print">ccy is faster than typing it out &mdash; for everyone, no matter how fast you type</p>
         </div>
 
         <div class="footer fade-up">
@@ -1535,12 +1573,24 @@
             function replayRecording(recording, callback, token) {
                 if (token !== runToken) return;
                 replayElapsedMs = 0; keystrokeCount = 0; updateMeta();
+                // Normalize: cap each gap so dead-air from typos/pauses doesn't stall replay.
+                var MAX_GAP_MS = 400;
+                var norm = [];
+                var prevT = 0, cumOffset = 0;
+                for (var k = 0; k < recording.length; k++) {
+                    var s = recording[k] || {};
+                    var rawT = Number(s.t) || 0;
+                    var gap = Math.max(0, rawT - prevT);
+                    if (gap > MAX_GAP_MS) cumOffset += (gap - MAX_GAP_MS);
+                    prevT = rawT;
+                    norm.push({ t: rawT - cumOffset, v: String(s.v || '') });
+                }
                 var start = Date.now();
                 var i = 0;
                 function step() {
                     if (token !== runToken) return;
-                    if (i >= recording.length) { callback(); return; }
-                    var snap = recording[i];
+                    if (i >= norm.length) { callback(); return; }
+                    var snap = norm[i];
                     var now = Date.now() - start;
                     if (now >= snap.t) {
                         termText.textContent = snap.v;
@@ -1550,7 +1600,7 @@
                         i++;
                         step();
                     } else {
-                        setTimeout(step, snap.t - now);
+                        setTimeout(step, Math.min(MAX_GAP_MS, snap.t - now));
                     }
                 }
                 step();
@@ -2196,18 +2246,53 @@
                 });
         }
 
+        function dedupeByHandle(entries) {
+            // Keep one row per handle — the best wpm — and attach the rest as history
+            // (sorted newest-first). Input is assumed already sorted by wpm desc.
+            var byHandle = {};
+            var order = [];
+            entries.forEach(function(e) {
+                if (!byHandle[e.handle]) {
+                    byHandle[e.handle] = Object.assign({}, e, { history: [] });
+                    order.push(e.handle);
+                } else {
+                    byHandle[e.handle].history.push(e);
+                }
+            });
+            return order.map(function(h) {
+                var row = byHandle[h];
+                row.history.sort(function(a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+                return row;
+            });
+        }
+
+        function formatHistoryDate(ts) {
+            if (!ts) return '';
+            var d = new Date(ts);
+            if (isNaN(d.getTime())) return '';
+            var now = new Date();
+            var diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+            if (diffDays < 1) return 'today';
+            if (diffDays < 2) return 'yesterday';
+            if (diffDays < 30) return diffDays + 'd ago';
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
         function renderLeaderboard(entries) {
             lastEntries = entries || [];
             var el = document.getElementById('leaderboard');
             while (el.firstChild) el.removeChild(el.firstChild);
 
+            // Collapse multiple submissions per handle — best first, rest in history
+            var collapsed = dedupeByHandle(entries);
+
             // Show challenge invite if visitor arrived via ?h=someone
             if (highlightHandle && highlightHandle !== ownHandle) {
-                var inviteIdx = entries.findIndex(function(e) { return e.handle === highlightHandle; });
-                if (inviteIdx >= 0) showInvite(entries[inviteIdx], inviteIdx + 1);
+                var inviteIdx = collapsed.findIndex(function(e) { return e.handle === highlightHandle; });
+                if (inviteIdx >= 0) showInvite(collapsed[inviteIdx], inviteIdx + 1);
             }
 
-            if (!entries.length && !(tentativeWpm > 0)) {
+            if (!collapsed.length && !(tentativeWpm > 0)) {
                 var empty = document.createElement('div');
                 empty.className = 'leaderboard-empty';
                 empty.textContent = 'nobody has submitted yet. be the first.';
@@ -2225,48 +2310,20 @@
             });
             el.appendChild(header);
 
-            // Compute where the tentative row would sit (rank among entries)
+            // Compute where the tentative row would sit (rank among deduped entries)
             var tentativeRank = -1;
             if (tentativeWpm > 0) {
-                tentativeRank = entries.filter(function(e) { return Number(e.wpm) > tentativeWpm; }).length;
+                tentativeRank = collapsed.filter(function(e) { return Number(e.wpm) > tentativeWpm; }).length;
             }
 
-            var top = entries.slice(0, 10);
+            var top = collapsed.slice(0, 10);
             top.forEach(function(entry, i) {
-                // Insert tentative row before this real entry if that's its rank
                 if (tentativeRank === i) el.appendChild(makeTentativeRow(i + 1, tentativeWpm));
 
-                var row = document.createElement('div');
-                row.className = 'leaderboard-row';
                 var realRank = i + (tentativeRank >= 0 && tentativeRank <= i ? 1 : 0);
-                if (realRank < 3) row.classList.add('podium-' + (realRank + 1));
                 var isHighlight = highlightHandle && entry.handle === highlightHandle;
                 var isMe = ownHandle && entry.handle === ownHandle;
-                if (isHighlight || isMe) row.classList.add('me');
-
-                var rank = document.createElement('span');
-                rank.className = 'lb-rank';
-                rank.textContent = '#' + (realRank + 1);
-                row.appendChild(rank);
-
-                var handle = document.createElement('span');
-                handle.className = 'lb-handle';
-                handle.textContent = entry.handle;
-                row.appendChild(handle);
-
-                var wpm = document.createElement('span');
-                wpm.className = 'lb-wpm';
-                wpm.textContent = Math.round(entry.wpm) + ' wpm';
-                row.appendChild(wpm);
-
-                // Saved per year: saved_s * 50 * 365 / 3600
-                var savedYr = (entry.saved_s * 50 * 365 / 3600).toFixed(1);
-                var saved = document.createElement('span');
-                saved.className = 'lb-saved';
-                saved.textContent = savedYr + 'h';
-                row.appendChild(saved);
-
-                el.appendChild(row);
+                appendLeaderboardRow(el, entry, realRank + 1, { isMe: isMe || isHighlight, podium: realRank < 3 ? realRank + 1 : 0 });
             });
 
             // If tentative ranks below the displayed top, append it at the bottom
@@ -2276,7 +2333,7 @@
 
             // If my row is outside top 10, add a "..." and show mine
             if (ownHandle) {
-                var myIdx = entries.findIndex(function(e) { return e.handle === ownHandle; });
+                var myIdx = collapsed.findIndex(function(e) { return e.handle === ownHandle; });
                 if (myIdx >= 10) {
                     var spacer = document.createElement('div');
                     spacer.className = 'leaderboard-row';
@@ -2285,17 +2342,71 @@
                     spacer.style.gridTemplateColumns = '1fr';
                     spacer.textContent = '…';
                     el.appendChild(spacer);
-
-                    var me = entries[myIdx];
-                    var myRow = document.createElement('div');
-                    myRow.className = 'leaderboard-row me';
-                    var rc = document.createElement('span'); rc.className = 'lb-rank'; rc.textContent = '#' + (myIdx + 1); myRow.appendChild(rc);
-                    var hc = document.createElement('span'); hc.className = 'lb-handle'; hc.textContent = me.handle; myRow.appendChild(hc);
-                    var wc = document.createElement('span'); wc.className = 'lb-wpm'; wc.textContent = Math.round(me.wpm) + ' wpm'; myRow.appendChild(wc);
-                    var sc = document.createElement('span'); sc.className = 'lb-saved'; sc.textContent = (me.saved_s * 50 * 365 / 3600).toFixed(1) + 'h'; myRow.appendChild(sc);
-                    el.appendChild(myRow);
+                    appendLeaderboardRow(el, collapsed[myIdx], myIdx + 1, { isMe: true, podium: 0 });
                 }
             }
+        }
+
+        function appendLeaderboardRow(parent, entry, displayRank, opts) {
+            opts = opts || {};
+            var row = document.createElement('div');
+            row.className = 'leaderboard-row';
+            if (opts.podium) row.classList.add('podium-' + opts.podium);
+            if (opts.isMe) row.classList.add('me');
+
+            var rank = document.createElement('span');
+            rank.className = 'lb-rank';
+            rank.textContent = '#' + displayRank;
+            row.appendChild(rank);
+
+            var handle = document.createElement('span');
+            handle.className = 'lb-handle';
+            var handleText = document.createElement('span');
+            handleText.textContent = entry.handle;
+            handle.appendChild(handleText);
+
+            var history = document.createElement('div');
+            history.className = 'lb-history';
+            var hasHistory = entry.history && entry.history.length > 0;
+
+            if (hasHistory) {
+                var toggle = document.createElement('span');
+                toggle.className = 'lb-toggle';
+                toggle.textContent = '▸ ' + entry.history.length;
+                toggle.title = entry.history.length + ' earlier attempt' + (entry.history.length !== 1 ? 's' : '');
+                toggle.onclick = function(ev) {
+                    ev.stopPropagation();
+                    toggle.classList.toggle('open');
+                    history.classList.toggle('open');
+                };
+                handle.appendChild(toggle);
+
+                entry.history.forEach(function(h) {
+                    var hr = document.createElement('div');
+                    hr.className = 'lb-history-row';
+                    var emptyCell = document.createElement('span'); hr.appendChild(emptyCell);
+                    var hd = document.createElement('span'); hd.className = 'lb-history-date'; hd.textContent = formatHistoryDate(h.timestamp); hr.appendChild(hd);
+                    var hw = document.createElement('span'); hw.className = 'lb-wpm'; hw.textContent = Math.round(h.wpm) + ' wpm'; hr.appendChild(hw);
+                    var hs = document.createElement('span'); hs.className = 'lb-saved'; hs.textContent = (h.saved_s * 50 * 365 / 3600).toFixed(1) + 'h'; hr.appendChild(hs);
+                    history.appendChild(hr);
+                });
+            }
+
+            row.appendChild(handle);
+
+            var wpm = document.createElement('span');
+            wpm.className = 'lb-wpm';
+            wpm.textContent = Math.round(entry.wpm) + ' wpm';
+            row.appendChild(wpm);
+
+            var savedYr = (entry.saved_s * 50 * 365 / 3600).toFixed(1);
+            var saved = document.createElement('span');
+            saved.className = 'lb-saved';
+            saved.textContent = savedYr + 'h';
+            row.appendChild(saved);
+
+            parent.appendChild(row);
+            if (hasHistory) parent.appendChild(history);
         }
 
         function makeTentativeRow(rank, wpm) {

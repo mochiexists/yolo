@@ -5,6 +5,11 @@ const RATE_LIMIT_SEC = 20;
 const CACHE_TTL_SEC = 30;
 const CACHE_KEY = 'lb_top100_v1';
 const REC_SUMMARY_ONLY = true;
+const SHEET_HEADERS = [
+  'timestamp', 'handle', 'wpm', 'saved_s',
+  'keystrokes', 'errors', 'breakdown',
+  'recording', 'flag', 'owner_hash'
+];
 const SHAMES = [
   "don't be a dick",
   "no.",
@@ -64,6 +69,7 @@ function doPost(e) {
     const ownerHash = userToken ? sha256Hex(userToken) : '';
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    ensureHeaders(sheet);
     const lastRow = sheet.getLastRow();
 
     // Soft handle ownership: if anyone has claimed this handle with a
@@ -118,6 +124,17 @@ function doPost(e) {
     return json({ ok: true, rank: rank, total: valid.length, flagged: !!flag });
   } catch (err) {
     return json({ ok: false, error: 'submission failed: ' + err.message });
+  }
+}
+
+function ensureHeaders(sheet) {
+  const width = SHEET_HEADERS.length;
+  const row = sheet.getRange(1, 1, 1, width).getValues()[0];
+  const needsWrite = SHEET_HEADERS.some((h, i) => String(row[i] || '').trim() !== h);
+  if (needsWrite) {
+    sheet.getRange(1, 1, 1, width).setValues([SHEET_HEADERS]);
+    sheet.getRange(1, 1, 1, width).setFontWeight('bold');
+    sheet.setFrozenRows(1);
   }
 }
 

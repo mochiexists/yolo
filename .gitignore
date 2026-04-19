@@ -1,6 +1,8 @@
 .DS_Store
 .clasprc.json
 **/.clasprc.json
+.clasp.json
+**/.clasp.json
 node_modules/
 .playwright-mcp/
 _*.png
