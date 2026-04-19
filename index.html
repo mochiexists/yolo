@@ -1184,6 +1184,18 @@
         <h1 class="fade-up">claude <span class="flag">--yolo</span></h1>
         <p class="tagline fade-up">Life's too short for --dangerously-skip-permissions</p>
 
+        <div class="install-section fade-up">
+            <div class="install-toggle">
+                <button class="active" id="installBtn" onclick="switchInstall('install')">install</button>
+                <button id="uninstallBtn" onclick="switchInstall('uninstall')">uninstall</button>
+            </div>
+            <div class="install-box" onclick="copyCmd(this)" id="installBox">
+                <code id="installCode">curl -fsSL https://mochiexists.com/yolo/install.sh | sh</code>
+                <button class="copy-btn" aria-label="Copy">&#x2398;</button>
+            </div>
+            <p class="install-note">open a new terminal after installing</p>
+        </div>
+
         <div class="fade-up">
             <div class="terminal" id="terminal">
                 <span class="terminal-prompt">$ </span><span class="terminal-text" id="termText"></span><span class="terminal-cursor"></span><span class="terminal-reaction" id="termReaction"></span>
@@ -1215,18 +1227,6 @@
                 </div>
             </div>
             <p class="stat-fine-print">* assuming 50 yolo invocations per day, because you're not a coward</p>
-        </div>
-
-        <div class="install-section fade-up">
-            <div class="install-toggle">
-                <button class="active" id="installBtn" onclick="switchInstall('install')">install</button>
-                <button id="uninstallBtn" onclick="switchInstall('uninstall')">uninstall</button>
-            </div>
-            <div class="install-box" onclick="copyCmd(this)" id="installBox">
-                <code id="installCode">curl -fsSL https://mochiexists.com/yolo/install.sh | sh</code>
-                <button class="copy-btn" aria-label="Copy">&#x2398;</button>
-            </div>
-            <p class="install-note">open a new terminal after installing</p>
         </div>
 
         <div class="shortcuts-area fade-up">
