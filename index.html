@@ -491,22 +491,23 @@
             transition: transform 0.25s ease;
             opacity: 0.65;
         }
-        .stats-section.collapsed .collapse-caret { transform: rotate(-90deg); }
-        .stats-section.collapsed .stats-chart > *:not(.stats-chart-title),
+        .stats-chart-title-wrap.collapsed .collapse-caret { transform: rotate(-90deg); }
+        .stats-section.collapsed .stats-chart,
         .stats-section.collapsed .stats,
         .stats-section.collapsed .stat-fine-print { display: none; }
-        .stats-section.collapsed .stats-chart { margin-bottom: 0; }
 
-        /* In the 2-column split, re-center the title across the whole
-           container (not just the left column). split-left sits in col-1
-           of a `1fr 2.4rem 1fr` grid, so container-center lives at
-           (100% + half-gap) from split-left's left edge. */
+        /* "where you land" heading lives in its own full-width row above
+           the 2-column split so it stays centered on the page (below the
+           install/uninstall block) regardless of chart/leaderboard widths. */
+        .stats-chart-title-wrap {
+            text-align: center;
+            margin: 0.5rem 0 1.1rem;
+        }
         @media (min-width: 980px) {
-            .stats-section .stats-chart-title {
-                position: relative;
-                left: calc(100% + 1.2rem);
-                transform: translateX(-50%);
-                width: max-content;
+            .stats-chart-title-wrap {
+                max-width: 580px;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
 
@@ -1539,6 +1540,8 @@
             <input type="text" id="typingInput" class="terminal-input-hidden" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
         </div>
 
+        <div class="stats-chart-title-wrap" id="statsChartTitleWrap" style="display:none;"></div>
+
         <div class="split">
           <div class="split-left">
             <div class="chart-placeholder fade-up" id="chartPlaceholder" onclick="openTypingTest({ scroll: true })">
@@ -2193,18 +2196,25 @@
             if (localStorage.getItem('yolo_chart_collapsed') === '1') {
                 section.classList.add('collapsed');
             }
-            var title = document.createElement('h3');
-            title.className = 'stats-chart-title';
-            title.appendChild(document.createTextNode('where you land'));
-            var caret = document.createElement('span');
-            caret.className = 'collapse-caret';
-            caret.textContent = '▾';
-            title.appendChild(caret);
-            title.onclick = function() {
-                var collapsed = section.classList.toggle('collapsed');
-                localStorage.setItem('yolo_chart_collapsed', collapsed ? '1' : '0');
-            };
-            chart.appendChild(title);
+            var titleWrap = document.getElementById('statsChartTitleWrap');
+            if (titleWrap) {
+                titleWrap.style.display = '';
+                while (titleWrap.firstChild) titleWrap.removeChild(titleWrap.firstChild);
+                var title = document.createElement('h3');
+                title.className = 'stats-chart-title';
+                title.appendChild(document.createTextNode('where you land'));
+                var caret = document.createElement('span');
+                caret.className = 'collapse-caret';
+                caret.textContent = '▾';
+                title.appendChild(caret);
+                title.onclick = function() {
+                    var collapsed = section.classList.toggle('collapsed');
+                    titleWrap.classList.toggle('collapsed', collapsed);
+                    localStorage.setItem('yolo_chart_collapsed', collapsed ? '1' : '0');
+                };
+                titleWrap.classList.toggle('collapsed', section.classList.contains('collapsed'));
+                titleWrap.appendChild(title);
+            }
 
             var cohort = [
                 { key: 'vim', name: 'vim', wpm: 250 },
