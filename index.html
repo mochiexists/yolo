@@ -438,7 +438,24 @@
             opacity: 0.55;
             margin-bottom: 1.1rem;
             text-align: center;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s;
         }
+        .stats-chart-title:hover { opacity: 0.8; }
+        .stats-chart-title .collapse-caret {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            margin-left: 0.4rem;
+            transition: transform 0.25s ease;
+            opacity: 0.65;
+        }
+        .stats-section.collapsed .collapse-caret { transform: rotate(-90deg); }
+        .stats-section.collapsed .stats-chart > *:not(.stats-chart-title),
+        .stats-section.collapsed .stats,
+        .stats-section.collapsed .stat-fine-print { display: none; }
+        .stats-section.collapsed .stats-chart { margin-bottom: 0; }
 
         .chart-row {
             --tier-above: 0;
@@ -1956,9 +1973,21 @@
             var chart = document.getElementById('statsChart');
             if (!chart) return;
             while (chart.firstChild) chart.removeChild(chart.firstChild);
+            var section = document.getElementById('statsSection');
+            if (localStorage.getItem('yolo_chart_collapsed') === '1') {
+                section.classList.add('collapsed');
+            }
             var title = document.createElement('h3');
             title.className = 'stats-chart-title';
-            title.textContent = 'where you land';
+            title.appendChild(document.createTextNode('where you land'));
+            var caret = document.createElement('span');
+            caret.className = 'collapse-caret';
+            caret.textContent = '▾';
+            title.appendChild(caret);
+            title.onclick = function() {
+                var collapsed = section.classList.toggle('collapsed');
+                localStorage.setItem('yolo_chart_collapsed', collapsed ? '1' : '0');
+            };
             chart.appendChild(title);
 
             var cohort = [
