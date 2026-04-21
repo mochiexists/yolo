@@ -2625,6 +2625,13 @@
 
             // Collapse multiple submissions per handle — best first, rest in history
             var collapsed = dedupeByHandle(entries);
+            // Annotate each collapsed row with its *true* rank in the full
+            // (un-deduped) list, so the visible row number matches the
+            // "ranked #N of M" callout — not the compressed index.
+            collapsed.forEach(function(row) {
+                var idx = entries.findIndex(function(e) { return e.handle === row.handle; });
+                row._trueRank = idx >= 0 ? idx + 1 : 0;
+            });
 
             // Show challenge invite if visitor arrived via ?h=someone
             if (highlightHandle && highlightHandle !== ownHandle) {
@@ -2650,25 +2657,27 @@
             });
             el.appendChild(header);
 
-            // Compute where the tentative row would sit (rank among deduped entries)
+            // Compute where the tentative row would sit (rank among all raw entries).
             var tentativeRank = -1;
+            var tentativeCollapsedIdx = -1;
             if (tentativeWpm > 0) {
-                tentativeRank = collapsed.filter(function(e) { return Number(e.wpm) > tentativeWpm; }).length;
+                tentativeRank = entries.filter(function(e) { return Number(e.wpm) > tentativeWpm; }).length + 1;
+                tentativeCollapsedIdx = collapsed.filter(function(e) { return Number(e.wpm) > tentativeWpm; }).length;
             }
 
             var top = collapsed.slice(0, 10);
             top.forEach(function(entry, i) {
-                if (tentativeRank === i) el.appendChild(makeTentativeRow(i + 1, tentativeWpm));
+                if (tentativeCollapsedIdx === i) el.appendChild(makeTentativeRow(tentativeRank, tentativeWpm));
 
-                var realRank = i + (tentativeRank >= 0 && tentativeRank <= i ? 1 : 0);
+                var displayRank = entry._trueRank || (i + 1);
                 var isHighlight = highlightHandle && entry.handle === highlightHandle;
                 var isMe = ownHandle && entry.handle === ownHandle;
-                appendLeaderboardRow(el, entry, realRank + 1, { isMe: isMe || isHighlight, podium: realRank < 3 ? realRank + 1 : 0 });
+                appendLeaderboardRow(el, entry, displayRank, { isMe: isMe || isHighlight, podium: displayRank <= 3 ? displayRank : 0 });
             });
 
             // If tentative ranks below the displayed top, append it at the bottom
-            if (tentativeRank >= top.length && tentativeWpm > 0) {
-                el.appendChild(makeTentativeRow(tentativeRank + 1, tentativeWpm));
+            if (tentativeCollapsedIdx >= top.length && tentativeWpm > 0) {
+                el.appendChild(makeTentativeRow(tentativeRank, tentativeWpm));
             }
 
             // If my row is outside top 10, add a "..." and show mine
@@ -2682,7 +2691,8 @@
                     spacer.style.gridTemplateColumns = '1fr';
                     spacer.textContent = '…';
                     el.appendChild(spacer);
-                    appendLeaderboardRow(el, collapsed[myIdx], myIdx + 1, { isMe: true, podium: 0 });
+                    var myRow = collapsed[myIdx];
+                    appendLeaderboardRow(el, myRow, myRow._trueRank || (myIdx + 1), { isMe: true, podium: 0 });
                 }
             }
         }
