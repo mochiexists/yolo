@@ -136,18 +136,23 @@
            Collapses with a mirrored animation when the user reveals the chart. */
         .reveal-cta-wrap {
             text-align: center;
-            max-height: 140px;
+            max-height: 160px;
             opacity: 1;
             overflow: hidden;
-            margin: 0 0 1.6rem;
+            /* Padding so the button's hover glow has room to render without
+               getting clipped by the overflow:hidden we need for collapse. */
+            padding: 14px 0 20px;
+            margin: -14px 0 1.25rem;
             transition:
                 max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
                 opacity 0.3s ease,
+                padding 0.45s cubic-bezier(0.22, 1, 0.36, 1),
                 margin 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .container.has-stats .reveal-cta-wrap {
             max-height: 0;
             opacity: 0;
+            padding: 0;
             margin: 0;
         }
         .reveal-cta {
@@ -2506,15 +2511,13 @@
         }
 
         // Called when the user clicks the "become 10× faster — see the proof" CTA.
-        // Always expands the chart; if the user hasn't taken the test yet,
-        // also switches to the 'you' tab and opens the test so they can beat it.
+        // Expands the chart AND challenges the user by swapping to the 'you'
+        // tab + opening the test — whether they've taken it before or not.
         function onRevealCta() {
             revealStatsSection();
-            if (!(savedYouWpm > 0)) {
-                // Let the chart expansion land (~550ms) before switching tabs
-                // and scrolling back to the terminal prompt.
-                setTimeout(function() { switchTypist('you'); }, 600);
-            }
+            // Let the chart expansion land (~550ms) before switching tabs
+            // and scrolling back to the terminal prompt.
+            setTimeout(function() { switchTypist('you'); }, 600);
         }
 
         function showTypingResult(wpm, breakdownLines) {
