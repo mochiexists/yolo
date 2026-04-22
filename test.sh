@@ -192,8 +192,8 @@ claude() {
 OLD_BLOCK
 assert_eq "old block is present" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
 
-# Run install — should update, not duplicate
-install_output=$(sh "$SCRIPT_DIR/install.sh" 2>&1)
+# Run install — should prompt (block differs) then overwrite with YOLO_ASSUME_YES
+install_output=$(YOLO_ASSUME_YES=1 sh "$SCRIPT_DIR/install.sh" 2>&1)
 assert_contains "install says Updated" "Updated" "$install_output"
 assert_eq "still exactly one marker after update" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
 
@@ -233,39 +233,54 @@ assert_not_contains "zshrc has no __claude_yolo" "__claude_yolo" "$(cat "$FAKE_H
 echo ""
 
 # ─────────────────────────────────────────────
-# Step 9: Uninstall always removes between markers (no hand-edit safety net —
-# we trust our own markers as provenance since distribution is install/uninstall
-# only, no hand-editing expected).
+# Step 9: Uninstall prompts when the block differs from the expected one.
+# Declining keeps the block; accepting (YOLO_ASSUME_YES=1) removes it.
 # ─────────────────────────────────────────────
-echo "=== Step 9: Uninstall removes block even if edited inside ==="
+echo "=== Step 9: Uninstall prompts on tampered block, obeys confirmation ==="
 sh "$SCRIPT_DIR/install.sh" >/dev/null 2>&1
 assert_eq "zshrc has marker before tampering" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
 sed -i.bak "/>>> claude-yolo >>>/a\\
 # INJECTED LINE" "$FAKE_HOME/.zshrc"
 rm -f "$FAKE_HOME/.zshrc.bak"
-sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
-assert_eq "marker removed even with edits inside" "0" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
-assert_not_contains "injected line removed along with block" "INJECTED LINE" "$(cat "$FAKE_HOME/.zshrc")"
+
+# Decline the prompt (no TTY, no YOLO_ASSUME_YES) → read fails → treated as no.
+decline_output=$(sh "$SCRIPT_DIR/uninstall.sh" </dev/null 2>&1 || true)
+assert_contains "uninstall shows diff" "doesn't match the expected block" "$decline_output"
+assert_contains "uninstall diff shows injected line" "INJECTED LINE" "$decline_output"
+assert_eq "marker still present after decline" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
+
+# Accept via env var — block removed despite mismatch.
+YOLO_ASSUME_YES=1 sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
+assert_eq "marker removed after YOLO_ASSUME_YES=1" "0" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
+assert_not_contains "injected line gone after confirmed uninstall" "INJECTED LINE" "$(cat "$FAKE_HOME/.zshrc")"
 echo ""
 
 # ─────────────────────────────────────────────
-# Step 10: Install overwrites a tampered block on re-run
+# Step 10: Install prompts when existing block differs; obeys confirmation.
 # ─────────────────────────────────────────────
-echo "=== Step 10: Install overwrites any block between markers ==="
+echo "=== Step 10: Install prompts on mismatched block, obeys confirmation ==="
 sh "$SCRIPT_DIR/install.sh" >/dev/null 2>&1
 sed -i.bak "/>>> claude-yolo >>>/a\\
 # USER CUSTOM LINE" "$FAKE_HOME/.zshrc"
 rm -f "$FAKE_HOME/.zshrc.bak"
-sh "$SCRIPT_DIR/install.sh" >/dev/null 2>&1
+
+# Decline → block untouched.
+decline_install=$(sh "$SCRIPT_DIR/install.sh" </dev/null 2>&1 || true)
+assert_contains "install shows diff" "differs from the latest" "$decline_install"
+assert_contains "install diff shows custom line" "USER CUSTOM LINE" "$decline_install"
+assert_contains "custom line still present after decline" "USER CUSTOM LINE" "$(cat "$FAKE_HOME/.zshrc")"
+
+# Accept → overwritten cleanly.
+YOLO_ASSUME_YES=1 sh "$SCRIPT_DIR/install.sh" >/dev/null 2>&1
 assert_eq "still exactly one marker after overwrite" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
 assert_not_contains "custom line gone after overwrite" "USER CUSTOM LINE" "$(cat "$FAKE_HOME/.zshrc")"
-sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
+YOLO_ASSUME_YES=1 sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
 echo ""
 
 # ─────────────────────────────────────────────
-# Step 11: Uninstall handles legacy format
+# Step 11: Legacy block — diff prompt handles older formats cleanly.
 # ─────────────────────────────────────────────
-echo "=== Step 11: Uninstall removes legacy block ==="
+echo "=== Step 11: Uninstall handles legacy block via confirmation ==="
 cat >> "$FAKE_HOME/.zshrc" << 'LEGACY_BLOCK'
 
 # >>> claude-yolo >>>
@@ -284,8 +299,8 @@ claude() {
 # <<< claude-yolo <<<
 LEGACY_BLOCK
 assert_eq "legacy block is present" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
-sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
-assert_eq "legacy block removed" "0" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
+YOLO_ASSUME_YES=1 sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
+assert_eq "legacy block removed after confirmation" "0" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
 echo ""
 
 # ─────────────────────────────────────────────

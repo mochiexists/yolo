@@ -80,9 +80,40 @@ EOF
 START_MARKER=">>> claude-yolo >>>"
 END_MARKER="<<< claude-yolo <<<"
 
-# Writes $block into $rc_file, replacing any existing claude-yolo block
-# between the markers. The markers themselves are our provenance, so we
-# trust them and overwrite unconditionally.
+# Print a unified diff of two strings, indented for readability.
+# Usage: show_block_diff <expected> <actual>
+show_block_diff() {
+    expected_str="$1"
+    actual_str="$2"
+    a=$(mktemp) && b=$(mktemp) || return 0
+    printf '%s\n' "$actual_str"   > "$a"
+    printf '%s\n' "$expected_str" > "$b"
+    # Strip diff's file headers (first two lines) and indent the rest.
+    diff -u "$a" "$b" 2>/dev/null | sed -n '3,$p' | sed 's/^/    /'
+    rm -f "$a" "$b"
+}
+
+# Ask the user y/N. Returns 0 on yes, 1 on no.
+# Works under `curl | sh` by reading from /dev/tty when stdin is piped.
+# Bypassed (auto-yes) when YOLO_ASSUME_YES=1.
+confirm() {
+    if [ "${YOLO_ASSUME_YES-}" = "1" ]; then
+        return 0
+    fi
+    printf '  %s [y/N] ' "$1"
+    if [ -r /dev/tty ]; then
+        read reply < /dev/tty || return 1
+    else
+        read reply || return 1
+    fi
+    case "$reply" in
+        [Yy]|[Yy][Ee][Ss]) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Install $block into $rc_file. If an existing claude-yolo block is present
+# that doesn't match the expected one, show a diff and ask before replacing.
 install_to_rc() {
     rc_file="$1"
     block="$2"
@@ -93,6 +124,16 @@ install_to_rc() {
         existing_block=$(sed -n "/$START_MARKER/,/$END_MARKER/p" "$rc_file")
         if [ "$existing_block" = "$block" ]; then
             echo "  Already up to date in $rc_file"
+            return
+        fi
+        echo ""
+        echo "  The claude-yolo block in $rc_file differs from the latest."
+        echo "  Lines that would change (— existing, + new):"
+        echo ""
+        show_block_diff "$block" "$existing_block"
+        echo ""
+        if ! confirm "Replace the existing block?"; then
+            echo "  Skipped $rc_file. Block left untouched."
             return
         fi
         sed -i.bak "/$START_MARKER/,/$END_MARKER/d" "$rc_file"
