@@ -113,17 +113,81 @@
 
         .split { text-align: center; }
 
-        /* Pre-test: chart side is hidden, only leaderboard shows (narrow, centered).
-           Once the user completes a run (.has-stats on container), the split widens
-           to two columns on desktop — chart on the left, leaderboard on the right. */
-        .split-left { display: none; }
-        .container.has-stats .split-left { display: block; }
+        /* The chart (split-left) collapses/expands smoothly both ways via
+           max-height + opacity transitions. `.has-stats` on .container is
+           the single source of truth for expanded state. */
+        .split-left {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transform: translateY(-6px);
+            transition:
+                max-height 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.35s ease,
+                transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .container.has-stats .split-left {
+            max-height: 1600px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* The "become 10× faster" CTA — shown only while the chart is collapsed.
+           Collapses with a mirrored animation when the user reveals the chart. */
+        .reveal-cta-wrap {
+            text-align: center;
+            max-height: 140px;
+            opacity: 1;
+            overflow: hidden;
+            margin: 0 0 1.6rem;
+            transition:
+                max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.3s ease,
+                margin 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .container.has-stats .reveal-cta-wrap {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+        }
+        .reveal-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.72rem 1.35rem;
+            background: rgba(184, 168, 216, 0.07);
+            border: 1px solid rgba(184, 168, 216, 0.22);
+            border-radius: 12px;
+            color: var(--accent-bright);
+            font-family: var(--mono);
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+        .reveal-cta:hover {
+            background: rgba(184, 168, 216, 0.14);
+            border-color: rgba(184, 168, 216, 0.45);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(184, 168, 216, 0.18);
+        }
+        .reveal-cta-sub {
+            color: var(--text-dim);
+            font-size: 0.82rem;
+            font-style: italic;
+        }
+        .reveal-cta-arrow {
+            font-family: var(--mono);
+            opacity: 0.75;
+            transition: transform 0.25s;
+        }
+        .reveal-cta:hover .reveal-cta-arrow { transform: translateY(2px); }
 
         @media (min-width: 980px) {
             .container.has-stats { max-width: 1060px; }
             /* Hero elements stay narrow and centered even when container widens */
             .cat-wrap, h1, .tagline, .install-section,
-            .challenge-section, .footer {
+            .challenge-section, .footer, .reveal-cta-wrap {
                 max-width: 580px;
                 margin-left: auto;
                 margin-right: auto;
@@ -143,27 +207,18 @@
             .split .benchmark-card { margin-bottom: 0; }
         }
 
-        /* Stats-side entrance animation once the test completes. */
-        .container.has-stats .split-left {
-            animation: statsSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        .container.has-stats .stats-chart-title {
-            animation: statsFadeIn 0.45s ease 0.15s both;
-        }
-        .container.has-stats .chart-row {
-            animation: statsFadeIn 0.5s ease both;
-        }
+        /* Stagger the inner chart elements on reveal so the section feels
+           composed, not dropped. One-shot keyframes; the outer max-height
+           transition handles the return trip when collapsing. */
+        .container.has-stats .stats-chart-title { animation: statsFadeIn 0.45s ease 0.15s both; }
+        .container.has-stats .chart-row          { animation: statsFadeIn 0.5s ease both; }
         .container.has-stats .chart-row:nth-child(2) { animation-delay: 0.22s; }
         .container.has-stats .chart-row:nth-child(3) { animation-delay: 0.30s; }
         .container.has-stats .chart-row:nth-child(4) { animation-delay: 0.38s; }
-        .container.has-stats .chart-scale { animation: statsFadeIn 0.5s ease 0.46s both; }
-        .container.has-stats .stats { animation: statsFadeIn 0.5s ease 0.52s both; }
-        .container.has-stats .stat-fine-print { animation: statsFadeIn 0.5s ease 0.58s both; }
+        .container.has-stats .chart-scale        { animation: statsFadeIn 0.5s ease 0.46s both; }
+        .container.has-stats .stats              { animation: statsFadeIn 0.5s ease 0.52s both; }
+        .container.has-stats .stat-fine-print    { animation: statsFadeIn 0.5s ease 0.58s both; }
 
-        @keyframes statsSlideIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
         @keyframes statsFadeIn {
             from { opacity: 0; transform: translateY(6px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -171,7 +226,8 @@
         @media (prefers-reduced-motion: reduce) {
             .container,
             .split,
-            .container.has-stats .split-left,
+            .split-left,
+            .reveal-cta-wrap,
             .container.has-stats .stats-chart-title,
             .container.has-stats .chart-row,
             .container.has-stats .chart-scale,
@@ -535,10 +591,6 @@
             transition: transform 0.25s ease;
             opacity: 0.65;
         }
-        .stats-section.collapsed .collapse-caret { transform: rotate(-90deg); }
-        .stats-section.collapsed .stats-chart > *:not(.stats-chart-title),
-        .stats-section.collapsed .stats,
-        .stats-section.collapsed .stat-fine-print { display: none; }
 
         .chart-row {
             --tier-above: 0;
@@ -1599,6 +1651,14 @@
             <input type="text" id="typingInput" class="terminal-input-hidden" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
         </div>
 
+        <div class="reveal-cta-wrap" id="revealCtaWrap">
+            <button type="button" class="reveal-cta" id="revealCta" onclick="onRevealCta()">
+                become 10&times; faster
+                <span class="reveal-cta-sub">&mdash; see the proof</span>
+                <span class="reveal-cta-arrow" aria-hidden="true">&darr;</span>
+            </button>
+        </div>
+
         <div class="split">
           <div class="split-left">
             <div class="stats-section fade-up" id="statsSection" style="display:none;">
@@ -2076,7 +2136,10 @@
             var ctaSub = document.querySelector('#benchmarkCtaBtn .cta-sub');
             if (ctaMain) ctaMain.textContent = 'your result: ' + Math.round(savedYouWpm) + ' wpm';
             if (ctaSub) ctaSub.textContent = 'tap to try again';
-            setTimeout(function() { revealStatsSection(); }, 300);
+            // Auto-expand for returning users unless they explicitly collapsed it.
+            if (localStorage.getItem('yolo_chart_collapsed') !== '1') {
+                setTimeout(function() { revealStatsSection(); }, 300);
+            }
         }
 
         function switchTypist(mode, opts) {
@@ -2286,21 +2349,15 @@
             var chart = document.getElementById('statsChart');
             if (!chart) return;
             while (chart.firstChild) chart.removeChild(chart.firstChild);
-            var section = document.getElementById('statsSection');
-            if (localStorage.getItem('yolo_chart_collapsed') === '1') {
-                section.classList.add('collapsed');
-            }
             var title = document.createElement('h3');
             title.className = 'stats-chart-title';
+            title.title = 'collapse chart';
             title.appendChild(document.createTextNode('where you land'));
             var caret = document.createElement('span');
             caret.className = 'collapse-caret';
             caret.textContent = '▾';
             title.appendChild(caret);
-            title.onclick = function() {
-                var collapsed = section.classList.toggle('collapsed');
-                localStorage.setItem('yolo_chart_collapsed', collapsed ? '1' : '0');
-            };
+            title.onclick = collapseStatsSection;
             chart.appendChild(title);
 
             var cohort = [
@@ -2437,8 +2494,27 @@
             var container = document.querySelector('.container');
             if (container) container.classList.add('has-stats');
             var replay = document.getElementById('terminalReplay');
-            if (replay) replay.style.display = '';
+            if (replay && savedYouWpm > 0) replay.style.display = '';
             renderStatsChart();
+            localStorage.setItem('yolo_chart_collapsed', '0');
+        }
+
+        function collapseStatsSection() {
+            var container = document.querySelector('.container');
+            if (container) container.classList.remove('has-stats');
+            localStorage.setItem('yolo_chart_collapsed', '1');
+        }
+
+        // Called when the user clicks the "become 10× faster — see the proof" CTA.
+        // Always expands the chart; if the user hasn't taken the test yet,
+        // also switches to the 'you' tab and opens the test so they can beat it.
+        function onRevealCta() {
+            revealStatsSection();
+            if (!(savedYouWpm > 0)) {
+                // Let the chart expansion land (~550ms) before switching tabs
+                // and scrolling back to the terminal prompt.
+                setTimeout(function() { switchTypist('you'); }, 600);
+            }
         }
 
         function showTypingResult(wpm, breakdownLines) {
