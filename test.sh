@@ -119,14 +119,14 @@ assert_contains "block has __claude_yolo function" "__claude_yolo()" "$ACTUAL_BL
 assert_contains "block has precmd hook" "add-zsh-hook precmd" "$ACTUAL_BLOCK"
 assert_contains "block has --dangerously-skip-permissions rewrite" "dangerously-skip-permissions" "$ACTUAL_BLOCK"
 assert_contains "block has __claude_yolo_inner fallback" "__claude_yolo_inner" "$ACTUAL_BLOCK"
-assert_contains "block has cc alias" "alias cc=" "$ACTUAL_BLOCK"
-assert_contains "block has cx alias" "alias cx=" "$ACTUAL_BLOCK"
 assert_contains "block has ccy alias" "alias ccy=" "$ACTUAL_BLOCK"
 assert_contains "block has cxy alias" "alias cxy=" "$ACTUAL_BLOCK"
+assert_not_contains "block does not add cc alias (conflicts with /usr/bin/cc)" "alias cc=" "$ACTUAL_BLOCK"
+assert_not_contains "block does not add cx alias" "alias cx=" "$ACTUAL_BLOCK"
 
 # Verify line count is reasonable
 block_lines=$(echo "$ACTUAL_BLOCK" | wc -l | tr -d ' ')
-assert_eq "block has 32 lines" "32" "$block_lines"
+assert_eq "block has 30 lines" "30" "$block_lines"
 echo ""
 
 # ─────────────────────────────────────────────
@@ -155,12 +155,8 @@ mixed=$(zsh -c "export PATH='$FAKE_HOME/bin:\$PATH'; source '$FAKE_HOME/.zshrc';
 assert_eq "mixed args rewritten correctly" "--model opus --dangerously-skip-permissions --verbose" "$mixed"
 
 # Shortcut aliases
-cc_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias cc" 2>&1)
-cx_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias cx" 2>&1)
 ccy_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias ccy" 2>&1)
 cxy_def=$(zsh -c "source '$FAKE_HOME/.zshrc'; alias cxy" 2>&1)
-assert_contains "cc alias defined" "claude --yolo" "$cc_def"
-assert_contains "cx alias defined" "codex --yolo" "$cx_def"
 assert_contains "ccy alias defined" "claude --yolo" "$ccy_def"
 assert_contains "cxy alias defined" "codex --yolo" "$cxy_def"
 
@@ -237,46 +233,33 @@ assert_not_contains "zshrc has no __claude_yolo" "__claude_yolo" "$(cat "$FAKE_H
 echo ""
 
 # ─────────────────────────────────────────────
-# Step 9: Tampered block — uninstall should refuse
+# Step 9: Uninstall always removes between markers (no hand-edit safety net —
+# we trust our own markers as provenance since distribution is install/uninstall
+# only, no hand-editing expected).
 # ─────────────────────────────────────────────
-echo "=== Step 9: Uninstall refuses tampered block ==="
-# Install fresh
+echo "=== Step 9: Uninstall removes block even if edited inside ==="
 sh "$SCRIPT_DIR/install.sh" >/dev/null 2>&1
 assert_eq "zshrc has marker before tampering" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
-
-# Inject a small edit inside the markers
 sed -i.bak "/>>> claude-yolo >>>/a\\
 # INJECTED LINE" "$FAKE_HOME/.zshrc"
 rm -f "$FAKE_HOME/.zshrc.bak"
-
-# Uninstall should warn and skip
-uninstall_output=$(sh "$SCRIPT_DIR/uninstall.sh" 2>&1)
-assert_contains "uninstall warns about tampered block" "WARNING" "$uninstall_output"
-assert_eq "marker still present (uninstall skipped)" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
-assert_contains "tampered line is still present after skipped uninstall" "INJECTED LINE" "$(cat "$FAKE_HOME/.zshrc")"
-
-# Clean up: remove tampered block manually and do a proper uninstall
-sed -i.bak "/>>> claude-yolo >>>/,/<<< claude-yolo <<</d" "$FAKE_HOME/.zshrc"
-rm -f "$FAKE_HOME/.zshrc.bak"
-assert_eq "cleaned up after tamper test" "0" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
+sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
+assert_eq "marker removed even with edits inside" "0" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
+assert_not_contains "injected line removed along with block" "INJECTED LINE" "$(cat "$FAKE_HOME/.zshrc")"
 echo ""
 
 # ─────────────────────────────────────────────
-# Step 10: Install refuses tampered block update
+# Step 10: Install overwrites a tampered block on re-run
 # ─────────────────────────────────────────────
-echo "=== Step 10: Install refuses tampered block update ==="
+echo "=== Step 10: Install overwrites any block between markers ==="
 sh "$SCRIPT_DIR/install.sh" >/dev/null 2>&1
-assert_eq "zshrc has marker before tampered update" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
 sed -i.bak "/>>> claude-yolo >>>/a\\
 # USER CUSTOM LINE" "$FAKE_HOME/.zshrc"
 rm -f "$FAKE_HOME/.zshrc.bak"
-tampered_install_output=$(sh "$SCRIPT_DIR/install.sh" 2>&1)
-assert_contains "install warns about tampered block" "WARNING" "$tampered_install_output"
-assert_eq "marker still present after skipped update" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
-assert_contains "custom line survives skipped update" "USER CUSTOM LINE" "$(cat "$FAKE_HOME/.zshrc")"
-sed -i.bak "/>>> claude-yolo >>>/,/<<< claude-yolo <<</d" "$FAKE_HOME/.zshrc"
-rm -f "$FAKE_HOME/.zshrc.bak"
-assert_eq "cleaned up after skipped update test" "0" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
+sh "$SCRIPT_DIR/install.sh" >/dev/null 2>&1
+assert_eq "still exactly one marker after overwrite" "1" "$(count_matches '>>> claude-yolo >>>' "$FAKE_HOME/.zshrc")"
+assert_not_contains "custom line gone after overwrite" "USER CUSTOM LINE" "$(cat "$FAKE_HOME/.zshrc")"
+sh "$SCRIPT_DIR/uninstall.sh" >/dev/null 2>&1
 echo ""
 
 # ─────────────────────────────────────────────
@@ -315,10 +298,10 @@ assert_eq "bashrc has claude-yolo marker" "1" "$(count_matches '>>> claude-yolo 
 BASH_BLOCK=$(sed -n '/>>> claude-yolo >>>/,/<<< claude-yolo <<</p' "$FAKE_BASH_HOME/.bashrc")
 assert_contains "bash block has PROMPT_COMMAND hook" "PROMPT_COMMAND=" "$BASH_BLOCK"
 assert_contains "bash block has __claude_yolo hook" "__claude_yolo_hook()" "$BASH_BLOCK"
-assert_contains "bash block has cc alias" "alias cc=" "$BASH_BLOCK"
-assert_contains "bash block has cx alias" "alias cx=" "$BASH_BLOCK"
 assert_contains "bash block has ccy alias" "alias ccy=" "$BASH_BLOCK"
 assert_contains "bash block has cxy alias" "alias cxy=" "$BASH_BLOCK"
+assert_not_contains "bash block does not add cc alias" "alias cc=" "$BASH_BLOCK"
+assert_not_contains "bash block does not add cx alias" "alias cx=" "$BASH_BLOCK"
 
 mkdir -p "$FAKE_BASH_HOME/bin"
 cat > "$FAKE_BASH_HOME/bin/claude" << 'FAKEBASHBIN'
