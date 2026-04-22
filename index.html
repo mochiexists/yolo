@@ -630,6 +630,13 @@
             font-weight: 500;
         }
 
+        /* Keep labels inside the track when a marker sits near either edge —
+           otherwise the label's outer half clips off the column. */
+        .chart-marker.edge-right .marker-label,
+        .chart-marker.edge-right .marker-val { transform: translateX(-100%); }
+        .chart-marker.edge-left .marker-label,
+        .chart-marker.edge-left .marker-val { transform: translateX(0); }
+
         .chart-scale {
             display: flex;
             justify-content: space-between;
@@ -682,6 +689,20 @@
             opacity: 0.45;
             margin-top: 0.9rem;
             line-height: 1.5;
+        }
+        .stat-fine-print.stat-footnote {
+            font-size: 0.8rem;
+            opacity: 0.35;
+            margin-top: 0.35rem;
+        }
+        .stat-asterisk {
+            font-family: var(--mono);
+            font-size: 0.55em;
+            vertical-align: super;
+            margin-left: 0.1em;
+            opacity: 0.55;
+            color: var(--text-dim);
+            font-weight: 400;
         }
 
         /* ── Typing result (shown after test complete) ── */
@@ -1592,11 +1613,12 @@
                         <div class="stat-label">saved per invocation</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-number" id="statYear">26.6h</div>
+                        <div class="stat-number" id="statYear">26.6h<span class="stat-asterisk">*</span></div>
                         <div class="stat-label">saved per year</div>
                     </div>
                 </div>
                 <p class="stat-fine-print">ccy is faster than typing it out &mdash; for everyone, no matter how fast you type</p>
+                <p class="stat-fine-print stat-footnote">* assuming 50 yolo invocations per day, because you&rsquo;re not a coward</p>
             </div>
           </div>
 
@@ -1834,7 +1856,11 @@
 
             function replayRecording(recording, callback, token) {
                 if (token !== runToken) return;
-                replayElapsedMs = 0; keystrokeCount = 0; updateMeta();
+                // Accumulate across phases within a loop so the final displayed
+                // total matches what the user actually scored — resetting only
+                // happens at loop start (in runSequence when index === 0).
+                var baseMs = replayElapsedMs;
+                var baseKeys = keystrokeCount;
                 // Normalize: cap each gap so dead-air from typos/pauses doesn't stall replay.
                 var MAX_GAP_MS = 400;
                 var norm = [];
@@ -1856,8 +1882,8 @@
                     var now = Date.now() - start;
                     if (now >= snap.t) {
                         termText.textContent = snap.v;
-                        keystrokeCount = i + 1;
-                        replayElapsedMs = snap.t;
+                        keystrokeCount = baseKeys + i + 1;
+                        replayElapsedMs = baseMs + snap.t;
                         updateMeta();
                         i++;
                         step();
@@ -1877,7 +1903,12 @@
                 if (token !== runToken || mode !== 'demo') return;
                 var item = sequence[index];
                 terminal.className = 'terminal ' + item.phase;
-                resetMeta();
+                // Preserve the accumulating meta for 'you' replay across phases
+                // (it mirrors what the user saw during the live test); reset
+                // only at the start of each loop cycle or for other typists.
+                var recs = typistData.you && typistData.you.recordings;
+                var isYouReplay = currentTypist === 'you' && recs && recs.length;
+                if (!isYouReplay || index === 0) resetMeta();
                 showReaction('');
                 typeText(item.text, function() {
                     if (token !== runToken || mode !== 'demo') return;
@@ -2328,7 +2359,8 @@
 
                 markers.forEach(function(m) {
                     var el = document.createElement('div');
-                    el.className = 'chart-marker is-' + m.key + (m.me ? ' is-you' : '');
+                    var edgeCls = m.pct >= 88 ? ' edge-right' : (m.pct <= 12 ? ' edge-left' : '');
+                    el.className = 'chart-marker is-' + m.key + (m.me ? ' is-you' : '') + edgeCls;
                     el.title = m.name + ' @ ' + Math.round(m.wpm) + ' wpm: ' + fmt(m.secs);
                     el.style.left = '0%';
                     var lbl = document.createElement('span');
