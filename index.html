@@ -381,14 +381,15 @@
             filter: brightness(1.5) blur(1px);
         }
 
-        /* The "pull down for π" hint, absolutely anchored below the h1
-           so it never affects layout. Appears on press, intensifies when
-           the drag passes the commit threshold. */
+        /* The "pull down for π" hint, absolutely anchored ABOVE the h1 so
+           it doesn't collide with the tagline underneath. Appears on press,
+           intensifies when the drag passes the commit threshold. The arrow
+           points back down to the wordmark — the thing you're pulling. */
         .brand-hint {
             position: absolute;
             left: 50%;
-            top: 100%;
-            transform: translate(-50%, -8px);
+            bottom: 100%;
+            transform: translate(-50%, 6px);
             font-family: 'Crimson Pro', Georgia, serif;
             font-style: italic;
             font-size: 0.82rem;
@@ -397,6 +398,7 @@
             white-space: nowrap;
             pointer-events: none;
             opacity: 0;
+            margin-bottom: 0.2rem;
             transition: opacity 0.35s ease,
                         transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
                         text-shadow 0.25s ease,
@@ -404,7 +406,7 @@
         }
         .brand-hint.visible {
             opacity: 0.7;
-            transform: translate(-50%, 4px);
+            transform: translate(-50%, -4px);
         }
         .brand-hint.primed {
             opacity: 1;
@@ -1720,7 +1722,7 @@
 
         <div class="brand-wrap fade-up">
             <h1 class="brand-h1" id="brandH1" title="click to toggle mode — drag down for π">ccy</h1>
-            <span class="brand-hint" id="brandHint" aria-hidden="true">pull down for π</span>
+            <span class="brand-hint" id="brandHint" aria-hidden="true">pull down for π &darr;</span>
         </div>
         <p class="tagline fade-up">Life's too short for --dangerously-skip-permissions</p>
 
