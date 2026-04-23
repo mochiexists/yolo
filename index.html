@@ -734,6 +734,11 @@
             margin: 0 0 1.3rem;
             text-align: left;
             padding: 0 0.5rem;
+            max-width: 100%;
+            /* min-width: 0 lets flex/grid parents shrink this row's label
+               past its intrinsic content width so long phrases wrap instead
+               of pushing the whole row (and viewport) wider. */
+            min-width: 0;
         }
         .chart-row:last-of-type { margin-bottom: 0.8rem; }
 
@@ -762,6 +767,11 @@
             opacity: 0.65;
             /* Dynamic spacing: +1rem per collision tier above the track. */
             margin-bottom: calc(1.7rem + var(--tier-above) * 0.95rem);
+            /* Long phrases (codex's --dangerously-bypass-approvals-and-sandbox)
+               otherwise blow past mobile viewport width. */
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            max-width: 100%;
         }
 
         .chart-track {
@@ -2374,11 +2384,12 @@
 
             function replayRecording(recording, callback, token, phaseDurationMs) {
                 if (token !== runToken) return;
-                // Accumulate across phases within a loop so the final displayed
-                // total matches what the user actually scored — resetting only
-                // happens at loop start (in runSequence when index === 0).
-                var baseMs = replayElapsedMs;
-                var baseKeys = keystrokeCount;
+                // Per-phrase counter: meta resets to 0 at the start of each
+                // phase replay. Easier to read ("ccy took 0.2s") than a
+                // running total across phrases.
+                replayElapsedMs = 0; keystrokeCount = 0; updateMeta();
+                var baseMs = 0;
+                var baseKeys = 0;
                 // Normalize: cap each gap so dead-air from typos/pauses doesn't stall replay.
                 var MAX_GAP_MS = 400;
                 var norm = [];
@@ -2428,12 +2439,7 @@
                 if (token !== runToken || mode !== 'demo') return;
                 var item = sequence[index];
                 terminal.className = 'terminal ' + item.phase;
-                // Preserve the accumulating meta for 'you' replay across phases
-                // (it mirrors what the user saw during the live test); reset
-                // only at the start of each loop cycle or for other typists.
-                var recs = typistData.you && typistData.you.recordings;
-                var isYouReplay = currentTypist === 'you' && recs && recs.length;
-                if (!isYouReplay || index === 0) resetMeta();
+                resetMeta();
                 showReaction('');
                 typeText(item.text, function() {
                     if (token !== runToken || mode !== 'demo') return;
