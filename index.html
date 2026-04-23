@@ -572,6 +572,34 @@
            in-badge "restart" button covers that case. */
         .terminal.terminal-test .terminal-replay { display: none !important; }
 
+        /* Caps-lock warning. Only surfaces during test mode when the
+           CapsLock modifier is active — the command phrases are lowercase,
+           and a silent 0%-accuracy nosedive is a cruel UX. */
+        .caps-warn {
+            position: absolute;
+            left: 1.5rem;
+            top: 0.9rem;
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #e8c884;
+            background: rgba(232, 200, 132, 0.08);
+            border: 1px solid rgba(232, 200, 132, 0.25);
+            padding: 0.3rem 0.55rem;
+            border-radius: 5px;
+            opacity: 0.95;
+            pointer-events: none;
+            animation: capsPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes capsPulse {
+            0%, 100% { box-shadow: 0 0 0 rgba(232, 200, 132, 0); }
+            50%      { box-shadow: 0 0 14px rgba(232, 200, 132, 0.18); }
+        }
+        /* Caps warning only surfaces during live test — it can share space
+           with the terminal-badge (right-aligned) without colliding. */
+        .terminal:not(.terminal-test) .caps-warn { display: none !important; }
+
         .terminal-badge {
             position: absolute;
             top: 0.7rem;
@@ -1766,6 +1794,9 @@
                     <span class="badge-label">your turn</span>
                     <span class="badge-phase" id="badgePhase">1 / 3</span>
                     <button class="badge-restart" type="button" onclick="event.stopPropagation(); resetTypingTest();" title="restart test (⌃C / ⌘⌫)">restart</button>
+                </div>
+                <div class="caps-warn" id="capsWarn" style="display:none;" aria-live="polite">
+                    &#x26A0; caps lock is on &mdash; the commands are lowercase
                 </div>
             </div>
             <input type="text" id="typingInput" class="terminal-input-hidden" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
@@ -3022,6 +3053,31 @@
 
         document.getElementById('typingInput').addEventListener('input', onTypingInput);
 
+        // Caps-lock detector. The commands are lowercase; a silent 0% due to
+        // CAPS LOCK is the worst kind of surprise. Check modifier state on
+        // every keydown/keyup and toggle the inline warning. Works in all
+        // modern browsers; the fallback (no modifier state) silently noops.
+        (function wireCapsLockWarn() {
+            var input = document.getElementById('typingInput');
+            var warn = document.getElementById('capsWarn');
+            if (!input || !warn) return;
+            function check(e) {
+                if (!terminalCtrl.isTestMode()) { warn.style.display = 'none'; return; }
+                var on = false;
+                try { on = !!(e.getModifierState && e.getModifierState('CapsLock')); }
+                catch (err) { on = false; }
+                warn.style.display = on ? '' : 'none';
+            }
+            input.addEventListener('keydown', check);
+            input.addEventListener('keyup', check);
+            // Also check when the test starts so an already-held CapsLock
+            // surfaces without waiting for a keystroke.
+            input.addEventListener('focus', function () {
+                // No event to query; clear until first keystroke reveals state.
+                warn.style.display = 'none';
+            });
+        })();
+
         // Block paste — this is a typing test, not a copy test
         document.getElementById('typingInput').addEventListener('paste', function(e) {
             e.preventDefault();
@@ -3603,6 +3659,13 @@
         function buildShareText(handle, wpm, rank) {
             var msPerChar = 60000 / (wpm * 5);
             var savedPerInvoke = ((saved * msPerChar) / 1000).toFixed(1);
+            if (ACTIVE_MODE === 'pi') {
+                // Pi has no long-form to save keystrokes against — it's a
+                // pure two-letter speedrun. Reframe accordingly.
+                return 'typed `pi` at ' + Math.round(wpm) + ' wpm. ' +
+                       'the two-letter speedrun.\n\n' +
+                       'ranked #' + rank + '. beat me →';
+            }
             return 'typed `' + MODE.shareLong + '` at ' + Math.round(wpm) + ' wpm. ' +
                    'saving ' + savedPerInvoke + 's every time I yolo instead.\n\n' +
                    'ranked #' + rank + '. beat me →';
