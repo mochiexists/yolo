@@ -1,5 +1,10 @@
 const MAX_WPM = 400;
 const MIN_KEYSTROKES = 50;
+// Shared secret for client HMAC. This is shipped in the static site — it
+// cannot stop a determined attacker who reads the source. It raises the
+// floor from "curl in five seconds" to "read the JS first".
+const HMAC_SECRET = 'ccy-v1-k9nR2pXqW7tLmZ4sVbE8';
+const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
 // pi mode is just two characters — the 50-keystroke anti-paste floor would
 // reject every submission. Mode-specific overrides live here.
 const MIN_KEYSTROKES_BY_MODE = { pi: 2 };
@@ -82,6 +87,8 @@ function doPost(e) {
     const recording = body.recording || [];
     const userToken = (body.userToken || '').toString();
     const mode = normalizeMode(body.mode);
+    const submittedAt = Number(body.submittedAt) || 0;
+    const sig = String(body.sig || '').toLowerCase();
 
     const handle = handleRaw.replace(/[<>\n\r\t]/g, '').slice(0, MAX_HANDLE_LEN);
     if (!handle) return json({ ok: false, error: 'sanitize your handle', code: 'bad_handle' });
@@ -99,13 +106,35 @@ function doPost(e) {
       return json({ ok: false, error: 'we see you pasting, type it yourself', code: 'no_keystrokes' });
     }
 
-    const cache = CacheService.getScriptCache();
-    const rateKey = 'rl_' + handle;
-    if (cache.get(rateKey)) {
-      return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
+    // HMAC check: rejects anyone hitting the endpoint without replicating the
+    // client-side signing. Obfuscation, not real auth — the secret is public.
+    const now = Date.now();
+    if (!submittedAt || Math.abs(now - submittedAt) > MAX_CLOCK_SKEW_MS) {
+      return json({ ok: false, error: 'stale submission, refresh the page', code: 'bad_sig' });
+    }
+    const expectedSig = hmacHex(HMAC_SECRET, signatureMessage(handle, wpm, keystrokes, errors, mode, submittedAt));
+    if (sig !== expectedSig) {
+      return json({ ok: false, error: 'invalid signature, refresh the page', code: 'bad_sig' });
     }
 
+    const cache = CacheService.getScriptCache();
     const ownerHash = userToken ? sha256Hex(userToken) : '';
+
+    // Handle-level cooldown (blocks rapid resubmits under the same handle).
+    const handleRateKey = 'rl_h_' + handle;
+    if (cache.get(handleRateKey)) {
+      return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
+    }
+    // Token-level cooldown: blocks one token from cycling handles (spam loop),
+    // but lets the same user resubmit under the same handle (typo fix) since
+    // that path is still gated by the handle cooldown above.
+    if (ownerHash) {
+      const tokKey = 'rl_tok_' + ownerHash;
+      const prevHandle = cache.get(tokKey);
+      if (prevHandle && prevHandle !== handle) {
+        return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
+      }
+    }
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     ensureHeaders(sheet);
@@ -147,7 +176,8 @@ function doPost(e) {
       mode
     ]);
 
-    cache.put(rateKey, '1', RATE_LIMIT_SEC);
+    cache.put(handleRateKey, '1', RATE_LIMIT_SEC);
+    if (ownerHash) cache.put('rl_tok_' + ownerHash, handle, RATE_LIMIT_SEC);
     cache.remove(CACHE_KEY_PREFIX + mode);
 
     const newLast = sheet.getLastRow();
@@ -179,6 +209,20 @@ function ensureHeaders(sheet) {
     sheet.getRange(1, 1, 1, width).setFontWeight('bold');
     sheet.setFrozenRows(1);
   }
+}
+
+function signatureMessage(handle, wpm, keystrokes, errors, mode, submittedAt) {
+  return [handle, wpm, keystrokes, errors, mode, submittedAt].join('|');
+}
+
+function hmacHex(secret, message) {
+  const bytes = Utilities.computeHmacSha256Signature(message, secret);
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) {
+    const b = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
+    out += ('0' + b.toString(16)).slice(-2);
+  }
+  return out;
 }
 
 function sha256Hex(s) {

@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ccy</title>
-    <meta name="description" content="Life's too short for --dangerously-skip-permissions.">
+    <meta name="description" content="Life's too short for --dangerously-skip-permissions. Install ccy: a shell wrapper that rewrites claude --yolo into claude --dangerously-skip-permissions.">
+    <meta name="keywords" content="claude, claude code, claude cli, dangerously-skip-permissions, yolo, ccy, cxy, codex, shell alias, zsh, bash">
+    <meta name="author" content="mochi exists">
+    <link rel="canonical" href="https://mochiexists.com/yolo/">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="sitemap" type="application/xml" href="/yolo/sitemap.xml">
 
     <!-- Open Graph / Facebook / iMessage -->
     <meta property="og:type" content="website">
@@ -23,6 +27,23 @@
     <meta name="twitter:title" content="ccy">
     <meta name="twitter:description" content="Life's too short for --dangerously-skip-permissions.">
     <meta name="twitter:image" content="https://mochiexists.com/yolo/og-image.png">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareSourceCode",
+      "name": "ccy",
+      "alternateName": ["claude --yolo", "cxy", "codex --yolo"],
+      "description": "Shell wrapper that rewrites claude --yolo into claude --dangerously-skip-permissions. Installs ccy and cxy shortcuts.",
+      "codeRepository": "https://github.com/mochiexists/yolo",
+      "programmingLanguage": "Shell",
+      "runtimePlatform": ["zsh", "bash"],
+      "operatingSystem": ["macOS", "Linux"],
+      "license": "https://opensource.org/licenses/MIT",
+      "url": "https://mochiexists.com/yolo/",
+      "author": { "@type": "Organization", "name": "mochi exists", "url": "https://mochiexists.com/" }
+    }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -3186,6 +3207,27 @@
         /* ── Leaderboard + sharing ── */
         var LEADERBOARD_API = 'https://script.google.com/macros/s/AKfycbwRyTPGVCcyAwPYWhZdwFi9c8M5P43D1jUuwignuNo6AoD14nB8zWg8k8xc_ztOP0DZ/exec';
         var MAX_SUBMIT_WPM = 400;
+        // Must match HMAC_SECRET in apps-script/leaderboard.gs. Public by
+        // nature (ships in this file) — raises the bar, doesn't lock it.
+        var HMAC_SECRET = 'ccy-v1-k9nR2pXqW7tLmZ4sVbE8';
+
+        function hmacHex(secret, message) {
+            var enc = new TextEncoder();
+            return crypto.subtle.importKey(
+                'raw', enc.encode(secret),
+                { name: 'HMAC', hash: 'SHA-256' },
+                false, ['sign']
+            ).then(function(key) {
+                return crypto.subtle.sign('HMAC', key, enc.encode(message));
+            }).then(function(buf) {
+                var arr = new Uint8Array(buf);
+                var out = '';
+                for (var i = 0; i < arr.length; i++) {
+                    out += ('0' + arr[i].toString(16)).slice(-2);
+                }
+                return out;
+            });
+        }
 
         // Restore last handle
         var savedHandle = localStorage.getItem(lsKey('handle')) || '';
@@ -3574,21 +3616,28 @@
                 if (rec && rec.length) totalKeystrokes += rec.length;
             });
 
-            var payload = {
-                handle: handle,
-                wpm: savedYouWpm,
-                keystrokes: totalKeystrokes,
-                errors: totalErrors,
-                breakdown: breakdown,
-                recording: typistData.you.recordings || [],
-                userToken: getOrCreateUserToken(),
-                mode: ACTIVE_MODE
-            };
+            var submittedAt = Date.now();
+            var sigMsg = [handle, savedYouWpm, totalKeystrokes, totalErrors, ACTIVE_MODE, submittedAt].join('|');
 
-            fetch(LEADERBOARD_API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
+            hmacHex(HMAC_SECRET, sigMsg).then(function(sig) {
+                var payload = {
+                    handle: handle,
+                    wpm: savedYouWpm,
+                    keystrokes: totalKeystrokes,
+                    errors: totalErrors,
+                    breakdown: breakdown,
+                    recording: typistData.you.recordings || [],
+                    userToken: getOrCreateUserToken(),
+                    mode: ACTIVE_MODE,
+                    submittedAt: submittedAt,
+                    sig: sig
+                };
+
+                return fetch(LEADERBOARD_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {

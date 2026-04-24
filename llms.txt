@@ -1,0 +1,40 @@
+# ccy — claude --yolo
+
+> A one-line shell wrapper that rewrites `claude --yolo` into `claude --dangerously-skip-permissions`, so you never have to type the long flag again. Also installs `ccy` (claude --yolo) and `cxy` (codex --yolo) as shortcuts.
+
+## What it is
+
+`ccy` is a zsh/bash function installed into your shell profile. It intercepts `claude` invocations, rewrites `--yolo` to `--dangerously-skip-permissions` before calling the underlying `claude` binary, and otherwise stays out of the way. Works with any install method (npm, Homebrew, cvm, etc.) and survives shell integrations that re-define `claude()` via a precmd hook.
+
+Install:
+
+```sh
+curl -fsSL https://mochiexists.com/yolo/install.sh | sh
+```
+
+Uninstall:
+
+```sh
+curl -fsSL https://mochiexists.com/yolo/uninstall.sh | sh
+```
+
+## Why
+
+`--dangerously-skip-permissions` is 32 keystrokes. `--yolo` is 6. Typing the long flag 50 times a day adds up to real time. The landing page includes a typing test that measures how much time each user saves per year.
+
+## Key links
+
+- [Install script](https://mochiexists.com/yolo/install.sh): the full installer, ~200 lines of POSIX-compatible shell
+- [Uninstall script](https://mochiexists.com/yolo/uninstall.sh): removes the wrapper cleanly
+- [GitHub repo](https://github.com/mochiexists/yolo): source, issues, license
+- [Landing page](https://mochiexists.com/yolo/): install + interactive typing test + leaderboard
+
+## Variants
+
+- `ccy` — `claude --yolo`
+- `cxy` — `codex --yolo` (OpenAI Codex CLI)
+- `pi` — two-character placeholder mode (for the typing test)
+
+## License
+
+MIT
