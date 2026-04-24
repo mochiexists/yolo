@@ -3802,11 +3802,9 @@
 
         // Initial fetch on load + auto-scroll to highlighted handle
         fetchLeaderboard();
-        if (highlightHandle) {
-            setTimeout(function() {
-                var section = document.querySelector('.benchmark-card');
-                if (section) section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 600);
+        if (highlightHandle && highlightHandle !== ownHandle) {
+            // Invited via ?h=someone — drop them straight into the challenge.
+            setTimeout(function() { openTypingTest({ scroll: true }); }, 600);
         }
 
     </script>
