@@ -2937,10 +2937,13 @@
                 if (n > 0) piAvgSecs = sumS / n;
                 // Order top→bottom: slowest → fastest. Pi lands last so the
                 // bars read as a nice descending line straight to the punch.
+                // The "you" marker on every row uses your pi time — the joke
+                // is you're not typing claude or codex at all, you're typing
+                // `pi` regardless.
                 chartRowSpecs = [
-                    { phrase: 'claude --dangerously-skip-permissions', phraseIdx: null, isReference: true },
-                    { phrase: 'codex --yolo', phraseIdx: null, isReference: true },
-                    { phrase: 'pi', youSecs: piAvgSecs, isReference: false }
+                    { phrase: 'claude --dangerously-skip-permissions', phraseIdx: null, isReference: true,  youSecs: piAvgSecs },
+                    { phrase: 'codex --yolo',                          phraseIdx: null, isReference: true,  youSecs: piAvgSecs },
+                    { phrase: 'pi',                                    phraseIdx: null, isReference: false, youSecs: piAvgSecs }
                 ];
             } else {
                 chartRowSpecs = typingPhases.map(function (p, i) {
