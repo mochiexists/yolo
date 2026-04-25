@@ -89,20 +89,21 @@ test.describe('ccy landing page', () => {
         await expect(page.locator('#statsYou.active')).toBeVisible({ timeout: 3000 });
     });
 
-    test('pi mode races claude (long) → codex --yolo → pi', async ({ page }) => {
+    test('pi mode: type pi three times, see strikethrough alternatives', async ({ page }) => {
         await page.goto('/?pi');
         await page.locator('#statsYou').click();
 
-        const piPhrases = [
-            'claude --dangerously-skip-permissions',
-            'codex --yolo',
-            'pi'
-        ];
+        // First two phases include a decorative struck-through suffix
+        // showing what the user is *not* typing. Verify it's rendered.
+        await expect(page.locator('#termText .strike-suffix')).toContainText(
+            'claude --dangerously-skip-permissions'
+        );
+
         const input = page.locator('#typingInput');
-        for (let i = 0; i < piPhrases.length; i++) {
+        for (let i = 0; i < 3; i++) {
             await input.focus();
-            await input.pressSequentially(piPhrases[i], { delay: 50 });
-            if (i < piPhrases.length - 1) await page.waitForTimeout(900);
+            await input.pressSequentially('pi', { delay: 80 });
+            if (i < 2) await page.waitForTimeout(900);
         }
         await expect(page.locator('#typingDone')).toBeVisible({ timeout: 5000 });
     });

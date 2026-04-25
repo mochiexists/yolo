@@ -567,6 +567,17 @@
             box-shadow: 0 2px 10px rgba(184, 168, 216, 0.4);
         }
         .terminal.terminal-test #termCursor { display: none; }
+        /* Decorative strike-through suffix shown after the typeable target
+           (pi mode). Not part of the typing challenge — purely the joke. */
+        .terminal-text .strike-suffix {
+            margin-left: 0.5em;
+            color: var(--text-dim);
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+            opacity: 0.5;
+            font-style: italic;
+            user-select: none;
+        }
 
         .terminal-replay {
             position: absolute;
@@ -2003,16 +2014,18 @@
                 id: 'pi',
                 brand: 'pi',
                 cli: 'pi',
-                // Pi races the *out-of-the-box* incantations of the other two:
-                // claude needs the long flag; codex ships --yolo built-in;
-                // pi is yolo by design and only two letters.
-                phrases: [
+                // Type pi three times. Each phase shows what you're *not*
+                // having to type — struck through, decorative, untyped.
+                phrases: ['pi', 'pi', 'pi'],
+                phraseLabels: ['1×', '2×', '3×'],
+                reactions: ['(o.o)', '(^.^)', '(O.O)'],
+                // Decorative suffix appended after the typeable `pi`. Not
+                // part of the target — just there to land the joke.
+                strikeSuffixes: [
                     'claude --dangerously-skip-permissions',
                     'codex --yolo',
-                    'pi'
+                    ''
                 ],
-                phraseLabels: ['claude', 'codex', 'pi'],
-                reactions: ['', '(^.^)', '(O.O)'],
                 tagline: 'yolo by design',
                 metaDescription: 'pi — yolo by design. two letters. faster than claude, faster than codex.',
                 fineprint: 'pi: yolo by design, two letters — out-types both alternatives',
@@ -2515,6 +2528,18 @@
                     span.textContent = target[i];
                     termText.appendChild(span);
                 }
+                // Pi mode: append a decorative strike-through suffix showing
+                // what the user is *not* having to type. Not part of `target`,
+                // never matched against `typed` — purely visual.
+                var suffixes = MODE.strikeSuffixes;
+                var phaseIdx = typeof typingState !== 'undefined' ? typingState.phase : 0;
+                var suffix = suffixes && suffixes[phaseIdx];
+                if (suffix) {
+                    var strike = document.createElement('span');
+                    strike.className = 'strike-suffix';
+                    strike.textContent = suffix;
+                    termText.appendChild(strike);
+                }
             }
 
             function enterTestMode(phaseIdx, totalPhases) {
@@ -2582,8 +2607,14 @@
         // 50 invocations/day, 365 days/year
         // `saved` is the keystroke delta between long form and short alias —
         // what you skip typing by using the short alias every invocation.
-        var saved = MODE.phrases[0].length - MODE.phrases[MODE.phrases.length - 1].length;
-        if (saved < 1) saved = 1; // pi has only one phrase; avoid zero/negative
+        // Chars saved per invocation. For claude/codex it's "long flag minus
+        // short alias". For pi (where every phase is just `pi`) we instead
+        // benchmark against `claude --dangerously-skip-permissions` — the
+        // out-of-the-box alternative pi is replacing.
+        var saved = ACTIVE_MODE === 'pi'
+            ? ('claude --dangerously-skip-permissions'.length - 'pi'.length)
+            : (MODE.phrases[0].length - MODE.phrases[MODE.phrases.length - 1].length);
+        if (saved < 1) saved = 1;
 
         function wpmToMsPerChar(wpm) { return 60000 / (wpm * 5); }
 
@@ -2874,32 +2905,52 @@
             title.onclick = collapseStatsSection;
             chart.appendChild(title);
 
-            var cohort = [
-                { key: 'vim', name: 'vim', wpm: 250 },
-                { key: 'you', name: 'you', wpm: savedYouWpm > 0 ? savedYouWpm : 0, me: true },
-                { key: 'human', name: 'human', wpm: 80 }
-            ];
+            // Pi mode drops the human cohort — the punchline is "you beat a
+            // vim user without trying", and a third row would dilute it.
+            var cohort = ACTIVE_MODE === 'pi'
+                ? [
+                    { key: 'vim', name: 'vim user', wpm: 250 },
+                    { key: 'you', name: 'you', wpm: savedYouWpm > 0 ? savedYouWpm : 0, me: true }
+                  ]
+                : [
+                    { key: 'vim', name: 'vim', wpm: 250 },
+                    { key: 'you', name: 'you', wpm: savedYouWpm > 0 ? savedYouWpm : 0, me: true },
+                    { key: 'human', name: 'human', wpm: 80 }
+                  ];
 
-            // Rows shown in the chart. In claude/codex that's the three phases
-            // of the test. In pi, we add two reference rows — the long claude
-            // command and codex's --yolo mid-form — so pi doesn't feel like
-            // it lives in isolation. Reference rows have no recorded "you"
-            // time, so the "you" marker is extrapolated from your pi WPM
-            // (if any). They render with a dimmed style to signal "context,
-            // not a phase you actually typed".
-            var chartRowSpecs = typingPhases.map(function (p, i) {
-                return { phrase: p, phraseIdx: i, isReference: false };
+            // Authoritative per-phase times captured during the live test.
+            var youTimes = (typistData.you && typistData.you.phaseTimesMs) || [];
+            var youPhaseSecs = typingPhases.map(function(_, i) {
+                var ms = youTimes[i];
+                return typeof ms === 'number' && ms > 0 ? ms / 1000 : null;
             });
+
+            // Rows shown in the chart. Pi mode collapses its three pi reps
+            // into one row showing the per-rep average, then references the
+            // out-of-the-box alternatives at vim speed (250 wpm). Claude/codex
+            // modes keep one row per phase as before.
+            var chartRowSpecs;
             if (ACTIVE_MODE === 'pi') {
-                chartRowSpecs.push({ phrase: MODES.claude.phrases[0], phraseIdx: null, isReference: true });
-                chartRowSpecs.push({ phrase: MODES.codex.phrases[1], phraseIdx: null, isReference: true });
+                var piAvgSecs = null;
+                var sumS = 0, n = 0;
+                youPhaseSecs.forEach(function(s) { if (s != null) { sumS += s; n++; } });
+                if (n > 0) piAvgSecs = sumS / n;
+                chartRowSpecs = [
+                    { phrase: 'pi', youSecs: piAvgSecs, isReference: false },
+                    { phrase: 'claude --dangerously-skip-permissions', phraseIdx: null, isReference: true },
+                    { phrase: 'codex --yolo', phraseIdx: null, isReference: true }
+                ];
+            } else {
+                chartRowSpecs = typingPhases.map(function (p, i) {
+                    return { phrase: p, phraseIdx: i, isReference: false };
+                });
             }
 
-            // Global scale: longest phrase at human speed. Expand for any
-            // phrase we display (including reference rows) and any user
-            // recorded times.
+            // Scale axis: in pi mode anchor on vim speed (the comparison
+            // point). Otherwise anchor on human speed (slowest cohort).
+            var anchorWpm = ACTIVE_MODE === 'pi' ? 250 : 80;
             var maxSecs = chartRowSpecs.reduce(function (acc, spec) {
-                return Math.max(acc, spec.phrase.length * (60000 / (80 * 5)) / 1000);
+                return Math.max(acc, spec.phrase.length * (60000 / (anchorWpm * 5)) / 1000);
             }, 0);
             var youTimesForScale = (typistData.you && typistData.you.phaseTimesMs) || [];
             youTimesForScale.forEach(function(ms) {
@@ -2910,15 +2961,6 @@
             function fmt(s) { return (s < 1 ? s.toFixed(2) : s.toFixed(1)) + 's'; }
 
             var rowsToMeasure = [];
-
-            // Authoritative per-phase times captured during the live test.
-            // Prefer these over the recording's last-entry.t (which can be
-            // inflated by backspace-and-rework churn after a mis-keystroke).
-            var youTimes = (typistData.you && typistData.you.phaseTimesMs) || [];
-            var youPhaseSecs = typingPhases.map(function(_, i) {
-                var ms = youTimes[i];
-                return typeof ms === 'number' && ms > 0 ? ms / 1000 : null;
-            });
 
             chartRowSpecs.forEach(function (spec) {
                 var phrase = spec.phrase;
@@ -2937,13 +2979,14 @@
 
                 var markers = cohort.filter(function(c) { return c.wpm > 0; }).map(function(c) {
                     var secs;
-                    if (c.me && phraseIdx != null && youPhaseSecs[phraseIdx] != null) {
+                    if (c.me && spec.youSecs != null) {
+                        // Pi mode: collapsed pi-row uses the avg-per-rep time.
+                        secs = spec.youSecs;
+                    } else if (c.me && phraseIdx != null && youPhaseSecs[phraseIdx] != null) {
                         // Authoritative: user's actual time on this phrase.
                         secs = youPhaseSecs[phraseIdx];
                     } else {
                         // Extrapolated: phrase length / this cohort's WPM.
-                        // For reference rows, this applies your saved pi WPM
-                        // to the long phrase so you see where you'd land.
                         secs = phrase.length * (60000 / (c.wpm * 5)) / 1000;
                     }
                     var pct = Math.min(100, Math.max(0.5, (secs / maxSecs) * 100));

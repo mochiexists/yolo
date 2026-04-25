@@ -5,9 +5,9 @@ const MIN_KEYSTROKES = 50;
 // floor from "curl in five seconds" to "read the JS first".
 const HMAC_SECRET = 'ccy-v1-k9nR2pXqW7tLmZ4sVbE8';
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
-// All modes now type ≥50 keystrokes total (long-flag phase included), so
-// no per-mode override is needed. Kept for future modes that might.
-const MIN_KEYSTROKES_BY_MODE = {};
+// pi types `pi` three times (6 chars) — well below the 50-keystroke floor
+// that catches paste-cheating in claude/codex. Override per mode.
+const MIN_KEYSTROKES_BY_MODE = { pi: 6 };
 const MAX_HANDLE_LEN = 24;
 const RATE_LIMIT_SEC = 20;
 const CACHE_TTL_SEC = 30;
