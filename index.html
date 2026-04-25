@@ -2052,6 +2052,18 @@
         }
 
         var ACTIVE_MODE = resolveMode();
+
+        // Hidden feature flags. Toggled via URL params, never UI. Defaults
+        // are off — production behavior is whatever has no flag set.
+        var FLAGS = (function () {
+            var params;
+            try { params = new URLSearchParams(window.location.search); }
+            catch (e) { return {}; }
+            // ?enter or ?enter=1 → require Enter to commit each phase instead
+            // of auto-advancing on match. Experimental, shell-like UX.
+            var enter = params.has('enter') && params.get('enter') !== '0';
+            return { enterToAdvance: enter };
+        })();
         var MODE = MODES[ACTIVE_MODE];
 
         // Namespaced storage. Legacy `yolo_*` keys (pre-modes) get lazily
@@ -2806,38 +2818,47 @@
             terminalCtrl.renderTarget(target, typed);
             updateLiveStats();
 
-            if (typed === target) {
-                var timeMs = Date.now() - typingState.phaseStartTime;
-                typingState.phaseResults.push({
-                    chars: target.length,
-                    timeMs: timeMs,
-                    errors: typingState.cumulativeErrors
+            if (typed === target && !FLAGS.enterToAdvance) {
+                completeCurrentPhase();
+            }
+        }
+
+        function completeCurrentPhase() {
+            var input = document.getElementById('typingInput');
+            var target = typingPhases[typingState.phase];
+            if (!input || input.value !== target) return;
+            if (typingState.phaseLocked) return;
+
+            var timeMs = Date.now() - typingState.phaseStartTime;
+            typingState.phaseResults.push({
+                chars: target.length,
+                timeMs: timeMs,
+                errors: typingState.cumulativeErrors
+            });
+            typingState.completedTimeMs = (typingState.completedTimeMs || 0) + timeMs;
+            // Lock the phase so any keystrokes during the reaction window
+            // don't tack onto the recording and skew replay duration.
+            typingState.phaseLocked = true;
+            var reactions = ['', '(^.^)', '(O.O)'];
+            var reaction = reactions[typingState.phase] || '';
+            if (typingState.liveTimer) { clearInterval(typingState.liveTimer); typingState.liveTimer = null; }
+            var nextPhase = typingState.phase + 1;
+            if (nextPhase >= typingPhases.length) {
+                terminalCtrl.showTestReaction(reaction, 800, function() { finishTypingTest(); });
+            } else {
+                terminalCtrl.showTestReaction(reaction, 700, function() {
+                    typingState.phase = nextPhase;
+                    typingState.phaseStartTime = 0;
+                    typingState.errors = 0;
+                    typingState.cumulativeErrors = 0;
+                    typingState.lastTyped = '';
+                    typingState.phaseLocked = false;
+                    input.value = '';
+                    terminalCtrl.setTestPhase(nextPhase, typingPhases.length);
+                    terminalCtrl.renderTarget(typingPhases[nextPhase], '');
+                    terminalCtrl.setTestStats(typingState.keystrokes, typingState.completedTimeMs || 0, 100);
+                    focusTerminalInput();
                 });
-                typingState.completedTimeMs = (typingState.completedTimeMs || 0) + timeMs;
-                // Lock the phase so any keystrokes during the reaction window
-                // don't tack onto the recording and skew replay duration.
-                typingState.phaseLocked = true;
-                var reactions = ['', '(^.^)', '(O.O)'];
-                var reaction = reactions[typingState.phase] || '';
-                if (typingState.liveTimer) { clearInterval(typingState.liveTimer); typingState.liveTimer = null; }
-                var nextPhase = typingState.phase + 1;
-                if (nextPhase >= typingPhases.length) {
-                    terminalCtrl.showTestReaction(reaction, 800, function() { finishTypingTest(); });
-                } else {
-                    terminalCtrl.showTestReaction(reaction, 700, function() {
-                        typingState.phase = nextPhase;
-                        typingState.phaseStartTime = 0;
-                        typingState.errors = 0;
-                        typingState.cumulativeErrors = 0;
-                        typingState.lastTyped = '';
-                        typingState.phaseLocked = false;
-                        input.value = '';
-                        terminalCtrl.setTestPhase(nextPhase, typingPhases.length);
-                        terminalCtrl.renderTarget(typingPhases[nextPhase], '');
-                        terminalCtrl.setTestStats(typingState.keystrokes, typingState.completedTimeMs || 0, 100);
-                        focusTerminalInput();
-                    });
-                }
             }
         }
 
@@ -3203,6 +3224,18 @@
             input.value = wordDeleteBackward(input.value);
             input.dispatchEvent(new Event('input', { bubbles: true }));
         }, true);
+
+        // Feature flag: ?enter — commit each phase on Enter rather than
+        // auto-advancing on match. Hidden until we're ready to try it on
+        // everyone.
+        if (FLAGS.enterToAdvance) {
+            document.getElementById('typingInput').addEventListener('keydown', function(e) {
+                if (e.key !== 'Enter') return;
+                if (!terminalCtrl.isTestMode()) return;
+                e.preventDefault();
+                completeCurrentPhase();
+            });
+        }
 
         // Ctrl+C or Cmd/Ctrl+Backspace restarts the test. Enter on the result screen also restarts.
         document.addEventListener('keydown', function(e) {
