@@ -3289,7 +3289,15 @@
         var MAX_SUBMIT_WPM = 400;
         var BLOCKED_HANDLE_PATTERNS = [
             /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[gq9]+[\W_]*(?:[e3]+[\W_]*r+|[a4]+)?/i,
-            /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[a4]+/i
+            /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[a4]+/i,
+            /f+[\W_]*(?:a|4)+[\W_]*(?:g|9)+(?:[\W_]*(?:g|9|o|0|e|3|t|7)+)*/i,
+            /r+[\W_]*(?:e|3)+[\W_]*(?:t|7)+[\W_]*(?:a|4)+[\W_]*r+[\W_]*d+/i,
+            /c+[\W_]*(?:u|v)+[\W_]*n+[\W_]*(?:t|7)+/i,
+            /f+[\W_]*(?:u|v)+[\W_]*c+[\W_]*k+/i,
+            /s+[\W_]*h+[\W_]*(?:i|1|!|\|)+[\W_]*(?:t|7)+/i,
+            /b+[\W_]*(?:i|1|!|\|)+[\W_]*(?:t|7)+[\W_]*c+[\W_]*h+/i,
+            /w+[\W_]*h+[\W_]*(?:o|0)+[\W_]*r+[\W_]*(?:e|3)+/i,
+            /s+[\W_]*l+[\W_]*(?:u|v)+[\W_]*(?:t|7)+/i
         ];
         // Must match HMAC_SECRET in apps-script/leaderboard.gs. Public by
         // nature (ships in this file) — raises the bar, doesn't lock it.

@@ -84,7 +84,15 @@ function annotateTrueRanks(entries, collapsed) {
 function isBlockedHandle(handle) {
     var patterns = [
         /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[gq9]+[\W_]*(?:[e3]+[\W_]*r+|[a4]+)?/i,
-        /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[a4]+/i
+        /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[a4]+/i,
+        /f+[\W_]*(?:a|4)+[\W_]*(?:g|9)+(?:[\W_]*(?:g|9|o|0|e|3|t|7)+)*/i,
+        /r+[\W_]*(?:e|3)+[\W_]*(?:t|7)+[\W_]*(?:a|4)+[\W_]*r+[\W_]*d+/i,
+        /c+[\W_]*(?:u|v)+[\W_]*n+[\W_]*(?:t|7)+/i,
+        /f+[\W_]*(?:u|v)+[\W_]*c+[\W_]*k+/i,
+        /s+[\W_]*h+[\W_]*(?:i|1|!|\|)+[\W_]*(?:t|7)+/i,
+        /b+[\W_]*(?:i|1|!|\|)+[\W_]*(?:t|7)+[\W_]*c+[\W_]*h+/i,
+        /w+[\W_]*h+[\W_]*(?:o|0)+[\W_]*r+[\W_]*(?:e|3)+/i,
+        /s+[\W_]*l+[\W_]*(?:u|v)+[\W_]*(?:t|7)+/i
     ];
     var compact = String(handle || '')
         .normalize('NFKD')
@@ -280,14 +288,20 @@ t('true rank is position in RAW entries, not collapsed index', function () {
 // ─────────────────────────────────────────────
 console.log('\n=== handle moderation ===');
 
-t('blocks common obfuscated slur handles', function () {
+t('blocks common obfuscated slur and profanity handles', function () {
     assert(isBlockedHandle('n1gg4'), 'leet spelling');
     assert(isBlockedHandle('n.i.g.g.e.r'), 'punctuation-separated spelling');
+    assert(isBlockedHandle('f.u.c.k'), 'punctuation-separated profanity');
+    assert(isBlockedHandle('b1tch'), 'leet profanity');
+    assert(isBlockedHandle('r3tard'), 'ableist slur');
+    assert(isBlockedHandle('wh0re'), 'leet profanity');
 });
 
 t('allows ordinary handles with nearby letters', function () {
     assert(!isBlockedHandle('nightbot'), 'ordinary handle');
     assert(!isBlockedHandle('nina'), 'short ordinary name');
+    assert(!isBlockedHandle('classification'), 'does not block tame substrings');
+    assert(!isBlockedHandle('passionfruit'), 'does not block partial tame words');
 });
 
 // ─────────────────────────────────────────────
