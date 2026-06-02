@@ -3392,7 +3392,8 @@
         }
 
         function renderLeaderboard(entries) {
-            lastEntries = entries || [];
+            entries = (entries || []).filter(function(entry) { return !isBlockedHandle(entry && entry.handle); });
+            lastEntries = entries;
             var el = document.getElementById('leaderboard');
             while (el.firstChild) el.removeChild(el.firstChild);
 
