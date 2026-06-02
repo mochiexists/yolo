@@ -81,6 +81,18 @@ function annotateTrueRanks(entries, collapsed) {
     return collapsed;
 }
 
+function isBlockedHandle(handle) {
+    var patterns = [
+        /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[gq9]+[\W_]*(?:[e3]+[\W_]*r+|[a4]+)?/i,
+        /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[a4]+/i
+    ];
+    var compact = String(handle || '')
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+    return patterns.some(function (pattern) { return pattern.test(compact); });
+}
+
 // ─────────────────────────────────────────────
 // Tiny test harness
 // ─────────────────────────────────────────────
@@ -260,6 +272,22 @@ t('true rank is position in RAW entries, not collapsed index', function () {
     // mochi is 1st everywhere.
     var mochiRow = collapsed.find(function (r) { return r.handle === 'mochi'; });
     assertEq(mochiRow._trueRank, 1);
+});
+
+
+// ─────────────────────────────────────────────
+// handle moderation
+// ─────────────────────────────────────────────
+console.log('\n=== handle moderation ===');
+
+t('blocks common obfuscated slur handles', function () {
+    assert(isBlockedHandle('n1gg4'), 'leet spelling');
+    assert(isBlockedHandle('n.i.g.g.e.r'), 'punctuation-separated spelling');
+});
+
+t('allows ordinary handles with nearby letters', function () {
+    assert(!isBlockedHandle('nightbot'), 'ordinary handle');
+    assert(!isBlockedHandle('nina'), 'short ordinary name');
 });
 
 // ─────────────────────────────────────────────

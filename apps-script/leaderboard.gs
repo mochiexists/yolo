@@ -15,6 +15,10 @@ const CACHE_KEY_PREFIX = 'lb_top100_v2_';
 const REC_SUMMARY_ONLY = true;
 const VALID_MODES = ['claude', 'codex', 'pi'];
 const DEFAULT_MODE = 'claude';
+const BLOCKED_HANDLE_PATTERNS = [
+  /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[gq9]+[\W_]*(?:[e3]+[\W_]*r+|[a4]+)?/i,
+  /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[a4]+/i
+];
 const SHEET_HEADERS = [
   'timestamp', 'handle', 'wpm', 'saved_s',
   'keystrokes', 'errors', 'breakdown',
@@ -94,6 +98,9 @@ function doPost(e) {
     if (!handle) return json({ ok: false, error: 'sanitize your handle', code: 'bad_handle' });
     if (/https?:|<script|javascript:/i.test(handle)) {
       return json({ ok: false, error: 'no links in handles', code: 'bad_handle' });
+    }
+    if (isBlockedHandle(handle)) {
+      return json({ ok: false, error: 'pick another handle', code: 'bad_handle' });
     }
     if (!wpm || wpm < 1 || isNaN(wpm)) {
       return json({ ok: false, error: 'invalid wpm', code: 'bad_wpm' });
@@ -245,6 +252,7 @@ function readTopEntries(limit, mode) {
   for (let i = 0; i < values.length; i++) {
     const r = values[i];
     if (!r[1] || r[8]) continue;
+    if (isBlockedHandle(String(r[1]))) continue;
     const rowMode = normalizeMode(r[MODE_COL - 1]);
     if (rowMode !== filterMode) continue;
     const wpm = Number(r[2]);
@@ -260,6 +268,31 @@ function readTopEntries(limit, mode) {
   }
   rows.sort((a, b) => b.wpm - a.wpm);
   return rows.slice(0, limit);
+}
+
+function isBlockedHandle(handle) {
+  const compact = String(handle || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return BLOCKED_HANDLE_PATTERNS.some(function (pattern) { return pattern.test(compact); });
+}
+
+function removeBlockedHandles() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  ensureHeaders(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: true, removed: 0 };
+  const values = sheet.getRange(2, 1, lastRow - 1, MODE_COL).getValues();
+  const rowsToDelete = [];
+  for (let i = 0; i < values.length; i++) {
+    if (isBlockedHandle(values[i][1])) rowsToDelete.push(i + 2);
+  }
+  for (let i = rowsToDelete.length - 1; i >= 0; i--) {
+    sheet.deleteRow(rowsToDelete[i]);
+  }
+  clearCache();
+  return { ok: true, removed: rowsToDelete.length };
 }
 
 function summarizeRecording(recording) {

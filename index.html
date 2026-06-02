@@ -3287,9 +3287,21 @@
         /* ── Leaderboard + sharing ── */
         var LEADERBOARD_API = 'https://script.google.com/macros/s/AKfycbwRyTPGVCcyAwPYWhZdwFi9c8M5P43D1jUuwignuNo6AoD14nB8zWg8k8xc_ztOP0DZ/exec';
         var MAX_SUBMIT_WPM = 400;
+        var BLOCKED_HANDLE_PATTERNS = [
+            /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[gq9]+[\W_]*(?:[e3]+[\W_]*r+|[a4]+)?/i,
+            /n+[\W_]*[i1!|]+[\W_]*[gq9]+[\W_]*[a4]+/i
+        ];
         // Must match HMAC_SECRET in apps-script/leaderboard.gs. Public by
         // nature (ships in this file) — raises the bar, doesn't lock it.
         var HMAC_SECRET = 'ccy-v1-k9nR2pXqW7tLmZ4sVbE8';
+
+        function isBlockedHandle(handle) {
+            var compact = String(handle || '')
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+            return BLOCKED_HANDLE_PATTERNS.some(function(pattern) { return pattern.test(compact); });
+        }
 
         function hmacHex(secret, message) {
             var enc = new TextEncoder();
@@ -3671,6 +3683,10 @@
 
             if (!handle) {
                 showSubmitStatus('pick a handle first', 'error');
+                return;
+            }
+            if (isBlockedHandle(handle)) {
+                showSubmitStatus('pick another handle', 'error');
                 return;
             }
             if (savedYouWpm > MAX_SUBMIT_WPM) {
