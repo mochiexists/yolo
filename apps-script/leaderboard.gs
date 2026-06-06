@@ -8,7 +8,6 @@ const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
 // pi types `pi` three times (6 chars) — well below the 50-keystroke floor
 // that catches paste-cheating in claude/codex. Override per mode.
 const MIN_KEYSTROKES_BY_MODE = { pi: 6 };
-const MAX_HANDLE_LEN = 24;
 const RATE_LIMIT_SEC = 20;
 const CACHE_TTL_SEC = 30;
 const CACHE_KEY_PREFIX = 'lb_top100_v2_';
@@ -29,6 +28,87 @@ const SHAMES = [
   "even vim users can't do that",
   "suspiciously fast, suspiciously rejected"
 ];
+
+// Whimsical, Toontown-style names minted server-side. The client never sends a
+// name, so profanity / impersonation simply cannot enter the sheet — it's a
+// closed vocabulary, not a filter to outrun. Multiple word seeds keep it fun.
+const NAME_TITLES = [
+  'Captain', 'Sir', 'Lady', 'Doctor', 'Professor', 'Baron', 'Madame', 'Lord',
+  'Chief', 'Major', 'Sergeant', 'Duchess', 'Count', 'Admiral', 'Sir Reginald',
+  'Mister', 'Princess', 'King', 'Queen', 'Colonel'
+];
+const NAME_ADJECTIVES = [
+  'Loopy', 'Wacky', 'Zippy', 'Reckless', 'Feral', 'Unhinged', 'Dizzy', 'Cranky',
+  'Sneaky', 'Goofy', 'Jittery', 'Rowdy', 'Bonkers', 'Frantic', 'Scrappy',
+  'Twitchy', 'Turbo', 'Sleepy', 'Grumpy', 'Spicy', 'Sparkly', 'Wobbly', 'Zesty',
+  'Cosmic', 'Sassy', 'Nimble', 'Rusty', 'Mighty', 'Cheeky', 'Snazzy', 'Dapper',
+  'Fuzzy', 'Giddy', 'Plucky', 'Bumbling'
+];
+const NAME_NOUNS = [
+  'Segfault', 'Daemon', 'Kernel', 'Otter', 'Goose', 'Mongoose', 'Pickle',
+  'Noodle', 'Waffle', 'Bumblequack', 'Snickerdoodle', 'Doodlebug', 'Wingnut',
+  'Bandit', 'Gizmo', 'Muffin', 'Pancake', 'Wombat', 'Narwhal', 'Pretzel',
+  'Gremlin', 'Biscuit', 'Walrus', 'Sprocket', 'Marmot', 'Pumpernickel',
+  'Flapjack', 'Quokka', 'Bonbon', 'Tugboat', 'Flibberty', 'Mcsnoot',
+  'Wobblesworth', 'Higgleflop', 'Bamboozle'
+];
+
+// One-time migration: replace every stored handle with a server-minted name,
+// seeded off the row's owner_hash so a returning player keeps one identity.
+// Originals are backed up to column `orig_handle` (12) before overwrite, so it's
+// reversible and re-running is idempotent (legacy rows re-seed from the backup).
+// Run from the Apps Script editor (like backfillClaudeMode). Already executed
+// once on 2026-06-06; safe to re-run.
+function reseedAllHandles() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  ensureHeaders(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return json({ ok: true, updated: 0, total: 0 });
+
+  const ORIG_COL = 12;
+  if (String(sheet.getRange(1, ORIG_COL).getValue() || '') !== 'orig_handle') {
+    sheet.getRange(1, ORIG_COL).setValue('orig_handle');
+  }
+
+  const n = lastRow - 1;
+  const tsCol = sheet.getRange(2, 1, n, 1).getValues();
+  const handleCol = sheet.getRange(2, 2, n, 1).getValues();
+  const wpmCol = sheet.getRange(2, 3, n, 1).getValues();
+  const ownerCol = sheet.getRange(2, 10, n, 1).getValues();
+  const origCol = sheet.getRange(2, ORIG_COL, n, 1).getValues();
+
+  const ownerToName = {};
+  const taken = {};
+  const newHandles = [];
+  const newOrigs = [];
+  let updated = 0;
+
+  for (let i = 0; i < n; i++) {
+    const owner = String(ownerCol[i][0] || '');
+    // Keep the first-run original; on re-runs the backup is already populated.
+    const orig = String(origCol[i][0] || '') || String(handleCol[i][0] || '');
+    newOrigs.push([orig]);
+
+    let name;
+    if (owner && ownerToName[owner]) {
+      name = ownerToName[owner]; // same player → same name across their rows
+    } else {
+      const seed = owner
+        ? owner // owner_hash is already the doPost seed; matches future submits
+        : sha256Hex('legacy|' + tsCol[i][0] + '|' + wpmCol[i][0] + '|' + orig);
+      name = generateHandle(seed, taken);
+      if (owner) ownerToName[owner] = name;
+    }
+    taken[name] = true;
+    newHandles.push([name]);
+    if (name !== String(handleCol[i][0] || '')) updated++;
+  }
+
+  sheet.getRange(2, 2, n, 1).setValues(newHandles);
+  sheet.getRange(2, ORIG_COL, n, 1).setValues(newOrigs);
+  clearCache();
+  return json({ ok: true, updated: updated, total: n });
+}
 
 function doGet(e) {
   try {
@@ -79,7 +159,6 @@ function handleRestore(hashHex) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-    const handleRaw = (body.handle || '').toString().trim();
     const wpm = Number(body.wpm);
     const keystrokes = Number(body.keystrokes);
     const errors = Number(body.errors) || 0;
@@ -90,11 +169,10 @@ function doPost(e) {
     const submittedAt = Number(body.submittedAt) || 0;
     const sig = String(body.sig || '').toLowerCase();
 
-    const handle = handleRaw.replace(/[<>\n\r\t]/g, '').slice(0, MAX_HANDLE_LEN);
-    if (!handle) return json({ ok: false, error: 'sanitize your handle', code: 'bad_handle' });
-    if (/https?:|<script|javascript:/i.test(handle)) {
-      return json({ ok: false, error: 'no links in handles', code: 'bad_handle' });
-    }
+    // Field guards. The name is minted by the server (below), so there is no
+    // client-supplied handle to sanitize — profanity / impersonation can't
+    // enter the sheet by construction, not by filtering. Any `body.handle` the
+    // client (or a direct API caller) sends is ignored outright.
     if (!wpm || wpm < 1 || isNaN(wpm)) {
       return json({ ok: false, error: 'invalid wpm', code: 'bad_wpm' });
     }
@@ -112,46 +190,52 @@ function doPost(e) {
     if (!submittedAt || Math.abs(now - submittedAt) > MAX_CLOCK_SKEW_MS) {
       return json({ ok: false, error: 'stale submission, refresh the page', code: 'bad_sig' });
     }
-    const expectedSig = hmacHex(HMAC_SECRET, signatureMessage(handle, wpm, keystrokes, errors, mode, submittedAt));
+    const expectedSig = hmacHex(HMAC_SECRET, signatureMessage(wpm, keystrokes, errors, mode, submittedAt));
     if (sig !== expectedSig) {
       return json({ ok: false, error: 'invalid signature, refresh the page', code: 'bad_sig' });
     }
 
     const cache = CacheService.getScriptCache();
     const ownerHash = userToken ? sha256Hex(userToken) : '';
-
-    // Handle-level cooldown (blocks rapid resubmits under the same handle).
-    const handleRateKey = 'rl_h_' + handle;
-    if (cache.get(handleRateKey)) {
-      return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
-    }
-    // Token-level cooldown: blocks one token from cycling handles (spam loop),
-    // but lets the same user resubmit under the same handle (typo fix) since
-    // that path is still gated by the handle cooldown above.
-    if (ownerHash) {
-      const tokKey = 'rl_tok_' + ownerHash;
-      const prevHandle = cache.get(tokKey);
-      if (prevHandle && prevHandle !== handle) {
-        return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
-      }
-    }
+    // Seed the name off the owner hash so a returning player keeps one identity.
+    // Tokenless submits fall back to the signature: stable within the request,
+    // just not restorable on another device.
+    const seedHex = ownerHash || sha256Hex(sig || String(submittedAt));
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     ensureHeaders(sheet);
     const lastRow = sheet.getLastRow();
 
-    // Soft handle ownership: if anyone has claimed this handle with a
-    // different owner hash, reject. Rows without an owner_hash are legacy /
-    // unclaimed and don't count.
+    // Read existing names + owners once. Used to (a) keep a returning player's
+    // existing name and (b) avoid minting a name already owned by someone else.
+    const takenByOther = {};
+    let myExistingHandle = '';
     if (lastRow > 1) {
-      const handleRange = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
-      const ownerRange = sheet.getRange(2, 10, lastRow - 1, 1).getValues();
-      for (let i = 0; i < handleRange.length; i++) {
-        if (String(handleRange[i][0]) !== handle) continue;
-        const existingOwner = String(ownerRange[i][0] || '');
-        if (existingOwner && existingOwner !== ownerHash) {
-          return json({ ok: false, error: 'handle taken, pick another', code: 'handle_taken' });
-        }
+      const handleCol = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+      const ownerCol = sheet.getRange(2, 10, lastRow - 1, 1).getValues();
+      for (let i = 0; i < handleCol.length; i++) {
+        const h = String(handleCol[i][0] || '');
+        if (!h) continue;
+        const o = String(ownerCol[i][0] || '');
+        if (ownerHash && o === ownerHash) myExistingHandle = h;
+        else takenByOther[h] = true;
+      }
+    }
+
+    // A returning player keeps their existing name; otherwise mint a fresh one.
+    const handle = myExistingHandle || generateHandle(seedHex, takenByOther);
+
+    // Handle-level cooldown (blocks rapid resubmits under the same name).
+    const handleRateKey = 'rl_h_' + handle;
+    if (cache.get(handleRateKey)) {
+      return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
+    }
+    // Token-level cooldown: blocks one token from spamming submissions.
+    if (ownerHash) {
+      const tokKey = 'rl_tok_' + ownerHash;
+      const prevHandle = cache.get(tokKey);
+      if (prevHandle && prevHandle !== handle) {
+        return json({ ok: false, error: 'chill, slow down', code: 'rate_limit' });
       }
     }
 
@@ -194,7 +278,7 @@ function doPost(e) {
     valid.sort((a, b) => b - a);
     const rank = valid.indexOf(wpm) + 1;
 
-    return json({ ok: true, rank: rank, total: valid.length, flagged: !!flag });
+    return json({ ok: true, rank: rank, total: valid.length, flagged: !!flag, handle: handle });
   } catch (err) {
     return json({ ok: false, error: 'submission failed: ' + err.message });
   }
@@ -211,8 +295,8 @@ function ensureHeaders(sheet) {
   }
 }
 
-function signatureMessage(handle, wpm, keystrokes, errors, mode, submittedAt) {
-  return [handle, wpm, keystrokes, errors, mode, submittedAt].join('|');
+function signatureMessage(wpm, keystrokes, errors, mode, submittedAt) {
+  return [wpm, keystrokes, errors, mode, submittedAt].join('|');
 }
 
 function hmacHex(secret, message) {
@@ -233,6 +317,33 @@ function sha256Hex(s) {
     out += ('0' + b.toString(16)).slice(-2);
   }
   return out;
+}
+
+// Deterministic name from a 64-char hex seed. `salt` nudges the combination so
+// we can re-roll on collision without losing determinism.
+function nameFromSeed(seedHex, salt) {
+  const h = sha256Hex(seedHex + '|' + salt);
+  const pick = function (start, len, arr) {
+    return arr[parseInt(h.substr(start, len), 16) % arr.length];
+  };
+  const adj = pick(2, 4, NAME_ADJECTIVES);
+  const noun = pick(6, 4, NAME_NOUNS);
+  // ~45% of names get a title for variety.
+  if (parseInt(h.substr(0, 2), 16) < 115) {
+    return pick(10, 4, NAME_TITLES) + ' ' + adj + ' ' + noun;
+  }
+  return adj + ' ' + noun;
+}
+
+// Mint a name not already owned by someone else. Re-rolls via salt; a returning
+// player's existing name is handled by the caller before this is reached.
+function generateHandle(seedHex, takenByOther) {
+  for (let salt = 0; salt < 60; salt++) {
+    const candidate = nameFromSeed(seedHex, salt);
+    if (!takenByOther[candidate]) return candidate;
+  }
+  // Pathological fallback (vocabulary exhausted): guaranteed-unique suffix.
+  return nameFromSeed(seedHex, 0) + ' ' + seedHex.substring(0, 4);
 }
 
 function readTopEntries(limit, mode) {

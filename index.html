@@ -1029,6 +1029,12 @@
             justify-content: center;
         }
 
+        .submit-name-note {
+            font-size: 0.78rem;
+            color: rgba(124, 111, 156, 0.65);
+            font-style: italic;
+        }
+
         .submit-form input {
             font-family: var(--mono);
             font-size: 0.88rem;
@@ -1927,8 +1933,8 @@
                 </div>
 
                 <div class="submit-form" id="submitForm">
-                    <input type="text" id="submitHandle" placeholder="your handle" maxlength="24" autocomplete="off">
                     <button id="submitBtn" onclick="submitToLeaderboard()">submit to leaderboard</button>
+                    <span class="submit-name-note">we'll mint you a name</span>
                 </div>
                 <div class="submit-status" id="submitStatus" style="display:none;"></div>
 
@@ -2028,7 +2034,7 @@
                 ],
                 tagline: 'yolo by design',
                 metaDescription: 'pi — yolo by design. two letters. faster than claude, faster than codex.',
-                fineprint: 'pi: yolo by design, two letters — out-types both alternatives',
+                fineprint: '',
                 ogImage: 'og-image.png',
                 leaderboard: true,
                 shareLong: 'pi'
@@ -2794,6 +2800,18 @@
             var typed = input.value;
             var prev = typingState.lastTyped || '';
 
+            // Anti-cheat: real keystrokes arrive one character per input event.
+            // A jump of >1 char means the value was injected programmatically
+            // (browser automation's "type" action / autofill) — the same cheat
+            // the paste handler blocks, just through a different door. Revert
+            // to the last legit value and flag it.
+            if (typed.length - prev.length > 1) {
+                input.value = prev;
+                typingState.lastTyped = prev;
+                flagPasteAttempt();
+                return;
+            }
+
             // Count new wrong-char hits (cumulative — survives backspaces)
             if (typed.length > prev.length) {
                 for (var i = prev.length; i < typed.length; i++) {
@@ -2870,6 +2888,13 @@
             var minutes = totalTimeMs / 1000 / 60;
             var wpm = minutes > 0 ? (totalChars / 5) / minutes : 0;
 
+            // Anti-cheat: even automation that fires one char per event can
+            // space them ~0ms apart, beating any human. If the measured speed
+            // is physically impossible, treat it as a cheat — keep it off the
+            // pending row and out of the submit form (server still enforces
+            // MAX_SUBMIT_WPM, this is the honest local mirror of that).
+            var cheated = wpm > MAX_SUBMIT_WPM;
+
             // Authoritative per-phase durations captured during the live test.
             // Used to render the chart AND scale replay meta so it never
             // exceeds what the user actually scored.
@@ -2903,9 +2928,9 @@
             // terminal exits test mode → demo resumes; will replay user's recording (currentTypist='you' + recordings set)
             terminalCtrl.exitTestMode();
             revealStatsSection();
-            tentativeWpm = wpm;
+            tentativeWpm = cheated ? 0 : wpm;
             renderLeaderboard(lastEntries);
-            showTypingResult(wpm, breakdownLines);
+            showTypingResult(wpm, breakdownLines, cheated);
         }
 
         function renderStatsChart() {
@@ -3112,9 +3137,22 @@
             setTimeout(function() { switchTypist('you'); }, 600);
         }
 
-        function showTypingResult(wpm, breakdownLines) {
+        function showTypingResult(wpm, breakdownLines, cheated) {
             var done = document.getElementById('typingDone');
             done.style.display = 'block';
+            var form = document.getElementById('submitForm');
+            if (cheated) {
+                document.getElementById('finalWpm').textContent = '—';
+                var bdC = document.getElementById('finalBreakdown');
+                while (bdC.firstChild) bdC.removeChild(bdC.firstChild);
+                bdC.textContent = 'nice try — that was faster than physically possible. type it for real.';
+                bdC.style.display = 'block';
+                if (form) form.style.display = 'none';
+                var footerC = document.getElementById('benchmarkFooter');
+                if (footerC) footerC.style.display = 'none';
+                return;
+            }
+            if (form) form.style.display = '';
             document.getElementById('finalWpm').textContent = Math.round(wpm);
             var bd = document.getElementById('finalBreakdown');
             while (bd.firstChild) bd.removeChild(bd.firstChild);
@@ -3136,7 +3174,7 @@
             typingState = {
                 phase: 0, phaseStartTime: 0, errors: 0, keystrokes: 0,
                 phaseResults: [], recordings: [], liveTimer: null,
-                cumulativeErrors: 0, lastTyped: '', completedTimeMs: 0, phaseLocked: false
+                cumulativeErrors: 0, lastTyped: '', completedTimeMs: 0, phaseLocked: false, cheated: false
             };
             var input = document.getElementById('typingInput');
             input.value = '';
@@ -3309,9 +3347,8 @@
             });
         }
 
-        // Restore last handle
+        // Last name we were assigned (used to highlight our own row).
         var savedHandle = localStorage.getItem(lsKey('handle')) || '';
-        if (savedHandle) document.getElementById('submitHandle').value = savedHandle;
 
         // Highlight handle from URL if present
         var highlightHandle = '';
@@ -3665,14 +3702,9 @@
         }
 
         function submitToLeaderboard() {
-            var handle = document.getElementById('submitHandle').value.trim();
             var btn = document.getElementById('submitBtn');
             var status = document.getElementById('submitStatus');
 
-            if (!handle) {
-                showSubmitStatus('pick a handle first', 'error');
-                return;
-            }
             if (savedYouWpm > MAX_SUBMIT_WPM) {
                 showSubmitStatus("even vim users can't do that", 'error');
                 return;
@@ -3697,11 +3729,11 @@
             });
 
             var submittedAt = Date.now();
-            var sigMsg = [handle, savedYouWpm, totalKeystrokes, totalErrors, ACTIVE_MODE, submittedAt].join('|');
+            // Name is minted server-side, so it's not part of the signed message.
+            var sigMsg = [savedYouWpm, totalKeystrokes, totalErrors, ACTIVE_MODE, submittedAt].join('|');
 
             hmacHex(HMAC_SECRET, sigMsg).then(function(sig) {
                 var payload = {
-                    handle: handle,
                     wpm: savedYouWpm,
                     keystrokes: totalKeystrokes,
                     errors: totalErrors,
@@ -3724,8 +3756,11 @@
                 btn.disabled = false;
                 btn.textContent = 'submit to leaderboard';
                 if (data.ok) {
-                    localStorage.setItem(lsKey('handle'), handle);
-                    ownHandle = handle;
+                    var handle = data.handle || '';
+                    if (handle) {
+                        localStorage.setItem(lsKey('handle'), handle);
+                        ownHandle = handle;
+                    }
                     tentativeWpm = 0;
                     showSubmitSuccess(data.rank, data.total, handle);
                     fetchLeaderboard();
@@ -3753,6 +3788,16 @@
             status.style.display = 'block';
             status.className = 'submit-status success';
             while (status.firstChild) status.removeChild(status.firstChild);
+
+            if (handle) {
+                var nameLine = document.createElement('div');
+                nameLine.appendChild(document.createTextNode("you're "));
+                var nameSpan = document.createElement('span');
+                nameSpan.className = 'rank-big';
+                nameSpan.textContent = handle;
+                nameLine.appendChild(nameSpan);
+                status.appendChild(nameLine);
+            }
 
             var line = document.createElement('div');
             line.appendChild(document.createTextNode('ranked '));
@@ -3920,14 +3965,6 @@
                 canvas.toBlob(function(blob) { resolve(blob); }, 'image/png');
             });
         }
-
-        // Handle Enter key in the submit input
-        document.getElementById('submitHandle').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                submitToLeaderboard();
-            }
-        });
 
         // Initial fetch on load + auto-scroll to highlighted handle
         fetchLeaderboard();

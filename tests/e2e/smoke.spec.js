@@ -24,7 +24,7 @@ test.describe('ccy landing page', () => {
                 return route.fulfill({
                     status: 200,
                     contentType: 'application/json',
-                    body: JSON.stringify({ ok: true, rank: 1, total: 1, flagged: false })
+                    body: JSON.stringify({ ok: true, rank: 1, total: 1, flagged: false, handle: 'Captain Loopy Otter' })
                 });
             }
             return route.fulfill({
@@ -71,16 +71,14 @@ test.describe('ccy landing page', () => {
         // After the final phase, finishTypingTest reveals #typingDone with the submit form.
         await expect(page.locator('#typingDone')).toBeVisible({ timeout: 5000 });
 
-        // Submit under a disposable handle.
-        const handle = 'smoketest_' + Date.now().toString(36);
-        await page.locator('#submitHandle').fill(handle);
+        // No handle field anymore — the server mints the name. Just submit.
         await page.locator('#submitBtn').click();
 
         const status = page.locator('#submitStatus');
         await expect(status).toBeVisible();
         // Intercepted response says ok:true, so the UI should show a success state
-        // (rank/total/handle baked into showSubmitSuccess).
-        await expect(status).toContainText(/#1|first|rank|leaderboard/i, { timeout: 5000 });
+        // (the minted name + rank/total baked into showSubmitSuccess).
+        await expect(status).toContainText(/#1|first|rank|leaderboard|Captain Loopy Otter/i, { timeout: 5000 });
     });
 
     test('invite link lands you in the typing test', async ({ page }) => {
