@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ccy</title>
     <meta name="description" content="Life's too short for --dangerously-skip-permissions. Install ccy: a shell wrapper that rewrites claude --yolo into claude --dangerously-skip-permissions.">
-    <meta name="keywords" content="claude, claude code, claude cli, dangerously-skip-permissions, yolo, ccy, cxy, codex, shell alias, zsh, bash">
+    <meta name="keywords" content="claude, claude code, claude cli, dangerously-skip-permissions, yolo, ccy, cxy, ccxy, codex, claudex, gpt-5.6, shell alias, zsh, bash">
     <meta name="author" content="mochi exists">
     <link rel="canonical" href="https://mochiexists.com/yolo/">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -33,8 +33,8 @@
       "@context": "https://schema.org",
       "@type": "SoftwareSourceCode",
       "name": "ccy",
-      "alternateName": ["claude --yolo", "cxy", "codex --yolo"],
-      "description": "Shell wrapper that rewrites claude --yolo into claude --dangerously-skip-permissions. Installs ccy and cxy shortcuts.",
+      "alternateName": ["claude --yolo", "cxy", "codex --yolo", "ccxy", "claudex --yolo"],
+      "description": "Shell wrapper that rewrites claude --yolo into claude --dangerously-skip-permissions. Installs ccy, cxy, and ccxy shortcuts.",
       "codeRepository": "https://github.com/mochiexists/yolo",
       "programmingLanguage": "Shell",
       "runtimePlatform": ["zsh", "bash"],
@@ -1806,7 +1806,7 @@
         </div>
 
         <div class="brand-wrap fade-up">
-            <h1 class="brand-h1" id="brandH1" title="click to toggle mode — drag down for π">ccy</h1>
+            <h1 class="brand-h1" id="brandH1" title="click to cycle modes — drag down for π">ccy</h1>
             <span class="brand-hint" id="brandHint" aria-hidden="true">pull down for π &darr;</span>
         </div>
         <p class="tagline fade-up">Life's too short for --dangerously-skip-permissions</p>
@@ -2016,6 +2016,24 @@
                 leaderboard: true,
                 shareLong: 'codex --dangerously-bypass-approvals-and-sandbox'
             },
+            claudex: {
+                id: 'claudex',
+                brand: 'ccxy',
+                cli: 'claudex',
+                phrases: [
+                    'CLAUDE_CODE_SUBAGENT_MODEL=gpt-5.6-sol claude --model gpt-5.6-sol',
+                    'claudex --yolo',
+                    'ccxy'
+                ],
+                phraseLabels: ['long', '--yolo', 'ccxy'],
+                reactions: ['', '(^.^)', '(O.O)'],
+                tagline: "Life's too short for CLAUDE_CODE_SUBAGENT_MODEL=gpt-5.6-sol",
+                metaDescription: "Life's too short for CLAUDE_CODE_SUBAGENT_MODEL=gpt-5.6-sol. ccxy launches Claude Code on GPT-5.6.",
+                fineprint: 'ccxy is faster for everyone, no matter how fast you type',
+                ogImage: 'og-image-cxy.png',
+                leaderboard: true,
+                shareLong: 'CLAUDE_CODE_SUBAGENT_MODEL=gpt-5.6-sol claude --model gpt-5.6-sol'
+            },
             pi: {
                 id: 'pi',
                 brand: 'pi',
@@ -2045,7 +2063,7 @@
         // brand-shaped: /yolo/?ccy → claude, /yolo/?cxy → codex, /yolo/?pi → pi.
         // (The Apps Script still accepts ?mode= internally; that's its API
         // contract and separate from the user-facing URL.)
-        var MODE_SLUGS = { ccy: 'claude', cxy: 'codex', pi: 'pi' };
+        var MODE_SLUGS = { ccy: 'claude', ccxy: 'claudex', cxy: 'codex', pi: 'pi' };
 
         function resolveMode() {
             try {
@@ -2093,7 +2111,7 @@
         })();
 
         // Slug form for share URLs: /yolo/?cxy reads better than /yolo/?mode=codex.
-        var MODE_TO_SLUG = { claude: 'ccy', codex: 'cxy', pi: 'pi' };
+        var MODE_TO_SLUG = { claude: 'ccy', codex: 'cxy', claudex: 'ccxy', pi: 'pi' };
 
         // Swaps the active mode. Mode change = hard reload with new query
         // string — simplest way to reset transient UI state without bug risk.
@@ -2329,9 +2347,11 @@
                 setHint(false, false);
 
                 if (!moved) {
-                    // Pure click — toggle.
-                    if (ACTIVE_MODE === 'pi') switchMode('claude');
-                    else switchMode(ACTIVE_MODE === 'claude' ? 'codex' : 'claude');
+                    // Pure click — cycle claude → codex → claudex → claude.
+                    // pi is reachable only via the pull gesture; clicking
+                    // from pi returns to claude.
+                    var NEXT_MODE = { claude: 'codex', codex: 'claudex', claudex: 'claude' };
+                    switchMode(NEXT_MODE[ACTIVE_MODE] || 'claude');
                 }
             }
 

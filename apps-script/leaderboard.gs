@@ -12,7 +12,7 @@ const RATE_LIMIT_SEC = 20;
 const CACHE_TTL_SEC = 30;
 const CACHE_KEY_PREFIX = 'lb_top100_v2_';
 const REC_SUMMARY_ONLY = true;
-const VALID_MODES = ['claude', 'codex', 'pi'];
+const VALID_MODES = ['claude', 'codex', 'claudex', 'pi'];
 const DEFAULT_MODE = 'claude';
 const SHEET_HEADERS = [
   'timestamp', 'handle', 'wpm', 'saved_s',

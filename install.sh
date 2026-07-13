@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-YOLO_VERSION="1.0.0"
+YOLO_VERSION="1.1.0"
 
 # claude-yolo installer
 # Adds shell plumbing so you can type less to live more:
@@ -9,6 +9,8 @@ YOLO_VERSION="1.0.0"
 #   codex  --yolo  →  codex  --dangerously-bypass-approvals-and-sandbox
 #   ccy            →  claude --yolo  (the shortest path home)
 #   cxy            →  codex  --yolo  (its sibling)
+#   ccxy           →  claudex --yolo (Claude Code on GPT-5.6 — only if
+#                     claudex is installed, e.g. via OVM)
 #
 # Survives other tools (e.g. terminal multiplexers) that redefine `claude()`
 # by using a precmd/PROMPT_COMMAND hook that re-wraps after clobbering.
@@ -43,6 +45,9 @@ __claude_yolo_hook
 add-zsh-hook precmd __claude_yolo_hook
 alias ccy='claude --yolo'
 alias cxy='codex --yolo'
+# ccxy needs claudex (Claude Code on GPT-5.6, ships with OVM); checked at
+# shell start so installing claudex later lights this up automatically.
+command -v claudex >/dev/null 2>&1 && alias ccxy='claudex --yolo'
 # <<< claude-yolo <<<
 EOF
 )
@@ -76,6 +81,9 @@ __claude_yolo_hook
 [[ "${PROMPT_COMMAND-}" == *__claude_yolo_hook* ]] || PROMPT_COMMAND="__claude_yolo_hook;${PROMPT_COMMAND-}"
 alias ccy='claude --yolo'
 alias cxy='codex --yolo'
+# ccxy needs claudex (Claude Code on GPT-5.6, ships with OVM); checked at
+# shell start so installing claudex later lights this up automatically.
+command -v claudex >/dev/null 2>&1 && alias ccxy='claudex --yolo'
 # <<< claude-yolo <<<
 EOF
 )
@@ -191,6 +199,7 @@ echo ""
 echo "    claude --yolo"
 echo ""
 echo "  Shortcuts:"
-echo "    ccy  →  claude --yolo"
-echo "    cxy  →  codex --yolo"
+echo "    ccy   →  claude --yolo"
+echo "    cxy   →  codex --yolo"
+echo "    ccxy  →  claudex --yolo (when claudex is installed)"
 echo ""
