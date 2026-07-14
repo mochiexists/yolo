@@ -13,6 +13,7 @@ Also installs shortcuts:
 |----------|------------|
 | `ccy` | `claude --yolo` |
 | `cxy` | `codex --yolo` |
+| `ccxy` | `claudex --yolo` (only when `claudex` is installed) |
 
 ## Install
 
