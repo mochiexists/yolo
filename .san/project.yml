@@ -12,6 +12,8 @@ integrations:
   copy: []
   analytics:
     provider: goatcounter
+    domain: mochiexists.com
+    searchConsoleProperty: sc-domain:mochiexists.com
     siteId: mochiexists
     publicDashboard: https://mochiexists.goatcounter.com
     searchConsole: pending
