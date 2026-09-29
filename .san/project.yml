@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: yolo
+name: yolo
+kind: webApplication
+summary: "the single-page yolo tool served at mochiexists.com/yolo."
+capabilities: []
+platforms: []
+repository:
+  canonicalRemotes:
+    - https://github.com/mochiexists/yolo.git
+integrations:
+  copy: []
+  analytics:
+    provider: goatcounter
+    domain: mochiexists.com
+    searchConsoleProperty: sc-domain:mochiexists.com
+    siteId: mochiexists
+    publicDashboard: https://mochiexists.goatcounter.com
+    searchConsole: pending
